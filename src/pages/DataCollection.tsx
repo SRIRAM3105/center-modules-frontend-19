@@ -115,7 +115,7 @@ const DataCollection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1 rounded-2xl overflow-hidden shadow-elegant animate-slide-in-right">
             <img
-              src="https://images.unsplash.com/photo-1595856619767-a51b4813232a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+              src="https://images.unsplash.com/photo-1498050108023-c5249f4df085"
               alt="Solar panel calculation"
               className="w-full h-full object-cover"
             />
