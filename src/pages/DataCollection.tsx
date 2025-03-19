@@ -7,8 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart2, Home, Sun, DollarSign, Upload } from 'lucide-react';
+import { BarChart2, Home, Sun, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const DataCollection = () => {
@@ -57,46 +56,27 @@ const DataCollection = () => {
                 <CardTitle>Energy Consumption Input</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <Tabs defaultValue="manual">
-                  <TabsList className="grid grid-cols-2 mb-4">
-                    <TabsTrigger value="manual">Manual Input</TabsTrigger>
-                    <TabsTrigger value="upload">Upload Bill</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="manual" className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="monthly-usage">Monthly Usage (kWh)</Label>
-                      <Input id="monthly-usage" type="number" placeholder="e.g. 850" />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="monthly-usage">Monthly Usage (kWh)</Label>
+                    <Input id="monthly-usage" type="number" placeholder="e.g. 850" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
+                    <Input id="average-bill" type="number" placeholder="e.g. 7,500" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Home Size (sq ft)</Label>
+                    <div className="pt-4 pb-2">
+                      <Slider defaultValue={[1500]} max={5000} step={100} />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
-                      <Input id="average-bill" type="number" placeholder="e.g. 7,500" />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>500</span>
+                      <span>1500</span>
+                      <span>5000</span>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Home Size (sq ft)</Label>
-                      <div className="pt-4 pb-2">
-                        <Slider defaultValue={[1500]} max={5000} step={100} />
-                      </div>
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>500</span>
-                        <span>1500</span>
-                        <span>5000</span>
-                      </div>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="upload" className="space-y-4">
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                      <h3 className="text-lg font-medium">Upload your utility bill</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Drag and drop or click to browse
-                      </p>
-                      <Button variant="outline" size="sm">Browse Files</Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Supported formats: PDF, JPG, PNG (max 10MB)
-                    </p>
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="roof-type">Roof Type</Label>
