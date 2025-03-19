@@ -25,18 +25,18 @@ const energyData = [
 ];
 
 const savingsData = [
-  { month: 'Jan', savings: 120 },
-  { month: 'Feb', savings: 130 },
-  { month: 'Mar', savings: 110 },
-  { month: 'Apr', savings: 90 },
-  { month: 'May', savings: 80 },
-  { month: 'Jun', savings: 60 },
-  { month: 'Jul', savings: 50 },
-  { month: 'Aug', savings: 55 },
-  { month: 'Sep', savings: 60 },
-  { month: 'Oct', savings: 80 },
-  { month: 'Nov', savings: 90 },
-  { month: 'Dec', savings: 100 },
+  { month: 'Jan', savings: 6000 },
+  { month: 'Feb', savings: 6500 },
+  { month: 'Mar', savings: 5500 },
+  { month: 'Apr', savings: 4500 },
+  { month: 'May', savings: 4000 },
+  { month: 'Jun', savings: 3000 },
+  { month: 'Jul', savings: 2500 },
+  { month: 'Aug', savings: 2750 },
+  { month: 'Sep', savings: 3000 },
+  { month: 'Oct', savings: 4000 },
+  { month: 'Nov', savings: 4500 },
+  { month: 'Dec', savings: 5000 },
 ];
 
 const dailyData = [
@@ -112,7 +112,7 @@ const Monitoring = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-3xl font-bold">$83.25</div>
+                      <div className="text-3xl font-bold">₹4,162</div>
                       <div className="text-sm text-muted-foreground mt-1">
                         +12% from last month
                       </div>
@@ -220,10 +220,10 @@ const Monitoring = () => {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
-                            <Tooltip formatter={(value) => [`$${value}`, 'Savings']} />
+                            <Tooltip formatter={(value) => [`₹${value}`, 'Savings']} />
                             <Bar 
                               dataKey="savings" 
-                              name="Savings ($)" 
+                              name="Savings (₹)" 
                               fill="#27A18A" 
                               radius={[4, 4, 0, 0]}
                             />
@@ -235,7 +235,7 @@ const Monitoring = () => {
                       <div className="w-full bg-muted/30 p-3 rounded-lg">
                         <div className="flex justify-between mb-1">
                           <span className="text-sm font-medium">Annual Savings</span>
-                          <span className="text-sm font-bold">$945</span>
+                          <span className="text-sm font-bold">₹47,250</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-sm font-medium">ROI Progress</span>

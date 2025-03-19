@@ -68,8 +68,8 @@ const DataCollection = () => {
                       <Input id="monthly-usage" type="number" placeholder="e.g. 850" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="average-bill">Average Monthly Bill ($)</Label>
-                      <Input id="average-bill" type="number" placeholder="e.g. 150" />
+                      <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
+                      <Input id="average-bill" type="number" placeholder="e.g. 7,500" />
                     </div>
                     <div className="space-y-2">
                       <Label>Home Size (sq ft)</Label>

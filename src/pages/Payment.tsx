@@ -75,14 +75,14 @@ const Payment = () => {
                         <RadioGroupItem value="full" id="full-payment" />
                         <Label htmlFor="full-payment" className="flex-1 font-medium">
                           Full Payment
-                          <p className="text-sm font-normal text-muted-foreground">Pay the entire amount: $5,250.00</p>
+                          <p className="text-sm font-normal text-muted-foreground">Pay the entire amount: ₹2,62,500</p>
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 space-y-0 rounded-md border p-3">
                         <RadioGroupItem value="installments" id="installments" />
                         <Label htmlFor="installments" className="flex-1 font-medium">
                           Monthly Installments
-                          <p className="text-sm font-normal text-muted-foreground">12 payments of $458.33/month</p>
+                          <p className="text-sm font-normal text-muted-foreground">12 payments of ₹22,917/month</p>
                         </Label>
                       </div>
                     </RadioGroup>
@@ -112,15 +112,15 @@ const Payment = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>System cost:</span>
-                          <span className="font-medium">$4,950.00</span>
+                          <span className="font-medium">₹2,47,500</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Installation fee:</span>
-                          <span className="font-medium">$250.00</span>
+                          <span className="font-medium">₹12,500</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Maintenance deposit:</span>
-                          <span className="font-medium">$50.00</span>
+                          <span className="font-medium">₹2,500</span>
                         </div>
                       </div>
                     </div>
@@ -128,15 +128,15 @@ const Payment = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span>Subtotal:</span>
-                        <span className="font-medium">$5,250.00</span>
+                        <span className="font-medium">₹2,62,500</span>
                       </div>
                       <div className="flex justify-between text-primary">
                         <span>Tax incentives & rebates:</span>
-                        <span className="font-medium">-$1,575.00</span>
+                        <span className="font-medium">-₹78,750</span>
                       </div>
                       <div className="flex justify-between font-bold text-lg border-t pt-3">
                         <span>Final cost:</span>
-                        <span>$3,675.00</span>
+                        <span>₹1,83,750</span>
                       </div>
                     </div>
 
@@ -146,7 +146,7 @@ const Payment = () => {
                         <div>
                           <h4 className="font-medium">Estimated Annual Savings</h4>
                           <p className="text-sm text-muted-foreground">
-                            Based on your current energy usage, you'll save approximately $820 per year on your electricity bill.
+                            Based on your current energy usage, you'll save approximately ₹41,000 per year on your electricity bill.
                           </p>
                         </div>
                       </div>
@@ -197,40 +197,40 @@ const Payment = () => {
                               name: "Sarah Johnson", 
                               allocation: 12.5, 
                               systemShare: "6 kW", 
-                              initialCost: "$7,500", 
-                              monthlyContribution: "$35",
+                              initialCost: "₹3,75,000", 
+                              monthlyContribution: "₹1,750",
                               status: "Paid"
                             },
                             { 
                               name: "Michael Chen", 
                               allocation: 10.4, 
                               systemShare: "5 kW", 
-                              initialCost: "$6,250", 
-                              monthlyContribution: "$28",
+                              initialCost: "₹3,12,500", 
+                              monthlyContribution: "₹1,400",
                               status: "Pending"
                             },
                             { 
                               name: "Emma Davis", 
                               allocation: 8.3, 
                               systemShare: "4 kW", 
-                              initialCost: "$5,000", 
-                              monthlyContribution: "$22",
+                              initialCost: "₹2,50,000", 
+                              monthlyContribution: "₹1,100",
                               status: "Paid"
                             },
                             { 
                               name: "James Wilson", 
                               allocation: 14.6, 
                               systemShare: "7 kW", 
-                              initialCost: "$8,750", 
-                              monthlyContribution: "$40",
+                              initialCost: "₹4,37,500", 
+                              monthlyContribution: "₹2,000",
                               status: "Paid"
                             },
                             { 
                               name: "You", 
                               allocation: 8.75, 
                               systemShare: "4.2 kW", 
-                              initialCost: "$5,250", 
-                              monthlyContribution: "$24",
+                              initialCost: "₹2,62,500", 
+                              monthlyContribution: "₹1,200",
                               status: "Pending"
                             }
                           ].map((member, index) => (
