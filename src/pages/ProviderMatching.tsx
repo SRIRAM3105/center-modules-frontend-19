@@ -1,14 +1,84 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sun, CheckCircle2, CalendarClock, ClipboardList, Star, MessageSquare } from 'lucide-react';
+import { Sun, CheckCircle2, CalendarClock, ClipboardList, Star, MessageSquare, DollarSign, ThumbsUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 const ProviderMatching = () => {
+  const { toast } = useToast();
+  const [activeProvider, setActiveProvider] = useState<string | null>(null);
+  const [contactFormOpen, setContactFormOpen] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [currentTab, setCurrentTab] = useState("find-installers");
+
+  const providers = [
+    {
+      id: "sb-001",
+      name: "SolarBright Solutions",
+      rating: 4.9,
+      reviews: 128,
+      certified: true,
+      yearsExperience: 12,
+      image: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2564&q=80"
+    },
+    {
+      id: "gp-002",
+      name: "GreenPower Installations",
+      rating: 4.7,
+      reviews: 95,
+      certified: true,
+      yearsExperience: 8,
+      image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80"
+    },
+    {
+      id: "st-003",
+      name: "SunTech Providers",
+      rating: 4.8,
+      reviews: 156,
+      certified: true,
+      yearsExperience: 15,
+      image: "https://images.unsplash.com/photo-1611365892117-bdf9aede0cd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80"
+    }
+  ];
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, this would send the message to the provider
+    setFormSubmitted(true);
+    
+    toast({
+      title: "Message Sent",
+      description: `Your message has been sent to ${activeProvider}. They will contact you shortly.`,
+    });
+    
+    setTimeout(() => {
+      setContactFormOpen(false);
+      setFormSubmitted(false);
+    }, 2000);
+  };
+
+  const handleRequestQuote = (providerId: string) => {
+    // Store selected provider in localStorage
+    localStorage.setItem('selectedProvider', providerId);
+    // Then navigate to payment page
+  };
+
+  const handleVote = (providerId: string) => {
+    toast({
+      title: "Vote Recorded",
+      description: "Your vote has been recorded. Thank you for participating!",
+    });
+  };
+
   return (
     <div className="min-h-screen">
       <Section className="pt-32 pb-24">
@@ -28,41 +98,21 @@ const ProviderMatching = () => {
         </div>
 
         <div className="mt-16">
-          <Tabs defaultValue="find-installers" className="w-full">
+          <Tabs 
+            defaultValue="find-installers" 
+            className="w-full"
+            value={currentTab}
+            onValueChange={setCurrentTab}
+          >
             <TabsList className="w-full max-w-md mx-auto grid grid-cols-3 mb-8">
               <TabsTrigger value="find-installers">Find Installers</TabsTrigger>
-              <TabsTrigger value="community-decision">Community Decision</TabsTrigger>
+              <TabsTrigger value="community-decision">Community Voting</TabsTrigger>
               <TabsTrigger value="installation-tracking">Installation Tracking</TabsTrigger>
             </TabsList>
 
             <TabsContent value="find-installers" className="animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  {
-                    name: "SolarBright Solutions",
-                    rating: 4.9,
-                    reviews: 128,
-                    certified: true,
-                    yearsExperience: 12,
-                    image: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2564&q=80"
-                  },
-                  {
-                    name: "GreenPower Installations",
-                    rating: 4.7,
-                    reviews: 95,
-                    certified: true,
-                    yearsExperience: 8,
-                    image: "https://images.unsplash.com/photo-1525617874235-2f0ce6e0c949?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80"
-                  },
-                  {
-                    name: "SunTech Providers",
-                    rating: 4.8,
-                    reviews: 156,
-                    certified: true,
-                    yearsExperience: 15,
-                    image: "https://images.unsplash.com/photo-1642543348745-32cf3e1e7e66?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80"
-                  }
-                ].map((provider, index) => (
+                {providers.map((provider, index) => (
                   <Card key={index} className="shadow-soft overflow-hidden animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
                     <div className="relative h-48 overflow-hidden">
                       <img 
@@ -97,14 +147,70 @@ const ProviderMatching = () => {
                       </p>
                     </CardContent>
                     <CardFooter className="flex justify-between">
-                      <Button variant="outline" size="sm" className="button-animation">
-                        <MessageSquare className="h-4 w-4 mr-2" /> Contact
+                      <Dialog open={contactFormOpen && activeProvider === provider.name} onOpenChange={(open) => {
+                        setContactFormOpen(open);
+                        if (open) setActiveProvider(provider.name);
+                      }}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="button-animation">
+                            <MessageSquare className="h-4 w-4 mr-2" /> Contact
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Contact {provider.name}</DialogTitle>
+                            <DialogDescription>
+                              Send a message to this provider to discuss your solar needs.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {!formSubmitted ? (
+                            <form onSubmit={handleContactSubmit}>
+                              <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="name" className="text-right">Name</Label>
+                                  <Input id="name" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="email" className="text-right">Email</Label>
+                                  <Input id="email" type="email" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="phone" className="text-right">Phone</Label>
+                                  <Input id="phone" type="tel" className="col-span-3" />
+                                </div>
+                                <div className="grid grid-cols-4 items-start gap-4">
+                                  <Label htmlFor="message" className="text-right">Message</Label>
+                                  <Textarea id="message" className="col-span-3" required />
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button type="submit">Send Message</Button>
+                              </DialogFooter>
+                            </form>
+                          ) : (
+                            <div className="py-6 text-center">
+                              <CheckCircle2 className="mx-auto h-10 w-10 text-green-500 mb-4" />
+                              <p className="text-lg font-medium">Message Sent!</p>
+                              <p className="text-muted-foreground">The provider will contact you soon.</p>
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                      <Button 
+                        size="sm" 
+                        className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                        onClick={() => {
+                          handleRequestQuote(provider.id);
+                          localStorage.setItem('selectedProviders', JSON.stringify([...providers.filter(p => p.id === provider.id)]));
+                          setCurrentTab("community-decision");
+                          toast({
+                            title: "Quote Requested",
+                            description: `Your quote has been requested from ${provider.name}. You can now vote in the community decision.`,
+                          });
+                        }}
+                      >
+                        Request Quote
                       </Button>
-                      <Link to="/payment">
-                        <Button size="sm" className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                          Request Quote
-                        </Button>
-                      </Link>
                     </CardFooter>
                   </Card>
                 ))}
@@ -122,64 +228,55 @@ const ProviderMatching = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
-                      {[
-                        {
-                          name: "SolarBright Solutions",
-                          votes: 68,
-                          totalCost: "$24,850",
-                          timeframe: "4-6 weeks",
-                          quotedDate: "May 15, 2023"
-                        },
-                        {
-                          name: "GreenPower Installations",
-                          votes: 42,
-                          totalCost: "$26,320",
-                          timeframe: "3-5 weeks",
-                          quotedDate: "May 18, 2023"
-                        },
-                        {
-                          name: "SunTech Providers",
-                          votes: 53,
-                          totalCost: "$25,100",
-                          timeframe: "5-7 weeks",
-                          quotedDate: "May 14, 2023"
-                        }
-                      ].map((provider, index) => (
-                        <div key={index} className="p-4 rounded-lg border border-border bg-white flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div className="mb-4 md:mb-0">
-                            <h3 className="font-medium text-lg">{provider.name}</h3>
-                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                              <span className="flex items-center">
-                                <DollarSign className="h-4 w-4 mr-1" /> {provider.totalCost}
-                              </span>
-                              <span className="flex items-center">
-                                <CalendarClock className="h-4 w-4 mr-1" /> {provider.timeframe}
-                              </span>
-                              <span className="flex items-center">
-                                <ClipboardList className="h-4 w-4 mr-1" /> Quoted: {provider.quotedDate}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <div className="text-center">
-                                <span className="text-2xl font-bold">{provider.votes}</span>
-                                <p className="text-xs text-muted-foreground">Votes</p>
+                      {providers.map((provider, index) => {
+                        const votes = provider.id === "sb-001" ? 68 : provider.id === "gp-002" ? 42 : 53;
+                        const totalCost = provider.id === "sb-001" ? "₹24,850" : provider.id === "gp-002" ? "₹26,320" : "₹25,100";
+                        const timeframe = provider.id === "sb-001" ? "4-6 weeks" : provider.id === "gp-002" ? "3-5 weeks" : "5-7 weeks";
+                        const quotedDate = provider.id === "sb-001" ? "May 15, 2023" : provider.id === "gp-002" ? "May 18, 2023" : "May 14, 2023";
+                        
+                        return (
+                          <div key={index} className="p-4 rounded-lg border border-border bg-white flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div className="mb-4 md:mb-0">
+                              <h3 className="font-medium text-lg">{provider.name}</h3>
+                              <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                                <span className="flex items-center">
+                                  <DollarSign className="h-4 w-4 mr-1" /> {totalCost}
+                                </span>
+                                <span className="flex items-center">
+                                  <CalendarClock className="h-4 w-4 mr-1" /> {timeframe}
+                                </span>
+                                <span className="flex items-center">
+                                  <ClipboardList className="h-4 w-4 mr-1" /> Quoted: {quotedDate}
+                                </span>
                               </div>
                             </div>
-                            <Button variant="outline" className="button-animation">
-                              Cast Vote
-                            </Button>
+                            <div className="flex items-center space-x-4">
+                              <div>
+                                <div className="text-center">
+                                  <span className="text-2xl font-bold">{votes}</span>
+                                  <p className="text-xs text-muted-foreground">Votes</p>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                className="button-animation"
+                                onClick={() => handleVote(provider.id)}
+                              >
+                                <ThumbsUp className="h-4 w-4 mr-2" /> Cast Vote
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
                     <p className="text-sm text-muted-foreground">Voting ends in: 3 days, 8 hours</p>
-                    <Button className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                      View Detailed Comparison
-                    </Button>
+                    <Link to="/payment">
+                      <Button className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
+                        Proceed to Payment
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
 
@@ -216,9 +313,9 @@ const ProviderMatching = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Link to="/monitoring" className="w-full">
+                    <Link to="/payment" className="w-full">
                       <Button className="w-full button-animation">
-                        Proceed to Installation Planning
+                        Proceed to Payment
                       </Button>
                     </Link>
                   </CardFooter>
@@ -353,21 +450,5 @@ const ProviderMatching = () => {
     </div>
   );
 };
-
-const DollarSign = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <line x1="12" y1="1" x2="12" y2="23"></line>
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-  </svg>
-);
 
 export default ProviderMatching;
