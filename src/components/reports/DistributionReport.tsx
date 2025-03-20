@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { generatePdfReport } from '@/services/api';
 
 // Define the member type for type safety
 type Member = {
@@ -158,18 +160,76 @@ const DistributionReportPDF = ({ members }: { members: Member[] }) => (
   </Document>
 );
 
-// Export Button Component that wraps the PDF download link
-const ExportDistributionReportButton = ({ members }: { members: Member[] }) => (
-  <PDFDownloadLink 
-    document={<DistributionReportPDF members={members} />} 
-    fileName="community-solar-distribution-report.pdf"
-  >
-    {({ loading }) => (
-      <Button variant="outline" className="button-animation" disabled={loading}>
+// Export Button Component that wraps the PDF download link with API integration
+const ExportDistributionReportButton = ({ members }: { members: Member[] }) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  
+  const handleExportViaAPI = async () => {
+    setLoading(true);
+    try {
+      // Option 1: Use client-side PDF generation if API fails
+      const pdfUrl = await generatePdfReport(members);
+      
+      if (pdfUrl) {
+        // If API returned a valid PDF URL
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = 'community-solar-distribution-report.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({
+          title: "Report Generated",
+          description: "Your PDF report has been successfully downloaded.",
+        });
+      } else {
+        // Fallback to client-side PDF generation
+        toast({
+          title: "Using Local Generation",
+          description: "Generating PDF locally due to API connection issue.",
+        });
+        // The PDFDownloadLink will be clicked programmatically
+        document.getElementById('local-pdf-download')?.click();
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: "There was an error generating your PDF report. Falling back to local generation.",
+      });
+      // Fallback to client-side PDF generation
+      document.getElementById('local-pdf-download')?.click();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Hidden PDFDownloadLink for fallback */}
+      <div style={{ display: 'none' }}>
+        <PDFDownloadLink 
+          id="local-pdf-download"
+          document={<DistributionReportPDF members={members} />} 
+          fileName="community-solar-distribution-report.pdf"
+        >
+          {() => <span>Download</span>}
+        </PDFDownloadLink>
+      </div>
+      
+      {/* Visible button that tries API first */}
+      <Button 
+        variant="outline" 
+        className="button-animation" 
+        disabled={loading}
+        onClick={handleExportViaAPI}
+      >
         {loading ? 'Generating PDF...' : 'Export Distribution Report'}
       </Button>
-    )}
-  </PDFDownloadLink>
-);
+    </>
+  );
+};
 
 export default ExportDistributionReportButton;
