@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, CreditCard, Bank } from 'lucide-react';
+import { CheckCircle, CreditCard, BuildingBank } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 const PaymentForm = ({ amount, projectId }: { amount: number; projectId: string }) => {
@@ -18,19 +17,16 @@ const PaymentForm = ({ amount, projectId }: { amount: number; projectId: string 
   const [paymentTab, setPaymentTab] = useState('card');
   
   const [formData, setFormData] = useState({
-    // Credit card details
     cardNumber: '',
     cardName: '',
     expiryDate: '',
     cvv: '',
     
-    // Bank transfer details
     accountName: '',
     accountNumber: '',
     ifscCode: '',
     bankName: '',
     
-    // Common details
     email: '',
     phone: '',
     billingAddress: '',
@@ -44,7 +40,6 @@ const PaymentForm = ({ amount, projectId }: { amount: number; projectId: string 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form based on payment method
     if (paymentTab === 'card') {
       if (!formData.cardNumber || !formData.cardName || !formData.expiryDate || !formData.cvv) {
         toast({
@@ -65,7 +60,6 @@ const PaymentForm = ({ amount, projectId }: { amount: number; projectId: string 
       }
     }
     
-    // Validate common fields
     if (!formData.email || !formData.phone) {
       toast({
         variant: "destructive",
@@ -78,7 +72,6 @@ const PaymentForm = ({ amount, projectId }: { amount: number; projectId: string 
     setLoading(true);
     
     try {
-      // Prepare payment data to send to backend
       const paymentData = {
         amount,
         projectId,
@@ -87,19 +80,15 @@ const PaymentForm = ({ amount, projectId }: { amount: number; projectId: string 
         timestamp: new Date().toISOString(),
       };
       
-      // Send to Spring Boot backend
       const response = await processPayment(paymentData);
       
-      // Show success message
       toast({
         title: "Payment Successful",
         description: `Your payment of ₹${amount.toLocaleString()} has been processed. Reference ID: ${response.transactionId}`,
       });
       
-      // Store transaction details in localStorage
       localStorage.setItem('paymentConfirmation', JSON.stringify(response));
       
-      // Redirect to monitoring page
       setTimeout(() => {
         navigate('/monitoring');
       }, 2000);
@@ -131,7 +120,7 @@ const PaymentForm = ({ amount, projectId }: { amount: number; projectId: string 
               Credit Card
             </TabsTrigger>
             <TabsTrigger value="bank">
-              <Bank className="mr-2 h-4 w-4" />
+              <BuildingBank className="mr-2 h-4 w-4" />
               Bank Transfer
             </TabsTrigger>
           </TabsList>
