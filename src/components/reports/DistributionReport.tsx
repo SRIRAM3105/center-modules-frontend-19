@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { generatePdfReport, downloadExistingPdf } from '@/services/api';
 
 // Define the member type for type safety
 type Member = {
@@ -159,111 +158,18 @@ const DistributionReportPDF = ({ members }: { members: Member[] }) => (
   </Document>
 );
 
-// Export Button Component that wraps the PDF download link with Spring Boot API integration
-const ExportDistributionReportButton = ({ members }: { members: Member[] }) => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  
-  const handleExportViaAPI = async () => {
-    setLoading(true);
-    try {
-      // Send data to Spring Boot backend to generate PDF
-      const pdfUrl = await generatePdfReport(members);
-      
-      if (pdfUrl) {
-        toast({
-          title: "Report Generated",
-          description: "Your PDF report has been successfully downloaded.",
-        });
-      } else {
-        // Fallback to client-side PDF generation
-        toast({
-          title: "Using Local Generation",
-          description: "Generating PDF locally due to API connection issue.",
-        });
-        // The PDFDownloadLink will be clicked programmatically
-        document.getElementById('local-pdf-download')?.click();
-      }
-    } catch (error) {
-      console.error('Error exporting report:', error);
-      toast({
-        variant: "destructive",
-        title: "Export Failed",
-        description: "There was an error generating your PDF report. Falling back to local generation.",
-      });
-      // Fallback to client-side PDF generation
-      document.getElementById('local-pdf-download')?.click();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to download an already generated PDF using a key
-  const handleDownloadExistingPdf = async (pdfKey: string) => {
-    setLoading(true);
-    try {
-      const success = await downloadExistingPdf(pdfKey);
-      
-      if (success) {
-        toast({
-          title: "PDF Downloaded",
-          description: "Your PDF report has been successfully downloaded.",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Download Failed",
-          description: "Unable to download the PDF. Please try again later.",
-        });
-      }
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast({
-        variant: "destructive",
-        title: "Download Failed",
-        description: "There was an error downloading your PDF report.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      {/* Hidden PDFDownloadLink for fallback */}
-      <div style={{ display: 'none' }}>
-        <PDFDownloadLink 
-          id="local-pdf-download"
-          document={<DistributionReportPDF members={members} />} 
-          fileName="community-solar-distribution-report.pdf"
-        >
-          {() => <span>Download</span>}
-        </PDFDownloadLink>
-      </div>
-      
-      {/* Visible buttons for API integration */}
-      <div className="flex gap-2">
-        <Button 
-          variant="outline" 
-          className="button-animation" 
-          disabled={loading}
-          onClick={handleExportViaAPI}
-        >
-          {loading ? 'Generating PDF...' : 'Export Distribution Report'}
-        </Button>
-        
-        {/* Button to download an already generated PDF using a key */}
-        <Button 
-          variant="secondary"
-          className="button-animation" 
-          disabled={loading}
-          onClick={() => handleDownloadExistingPdf('latest-distribution-report')}
-        >
-          {loading ? 'Downloading...' : 'Download Latest Report'}
-        </Button>
-      </div>
-    </>
-  );
-};
+// Export Button Component that wraps the PDF download link
+const ExportDistributionReportButton = ({ members }: { members: Member[] }) => (
+  <PDFDownloadLink 
+    document={<DistributionReportPDF members={members} />} 
+    fileName="community-solar-distribution-report.pdf"
+  >
+    {({ loading }) => (
+      <Button variant="outline" className="button-animation" disabled={loading}>
+        {loading ? 'Generating PDF...' : 'Export Distribution Report'}
+      </Button>
+    )}
+  </PDFDownloadLink>
+);
 
 export default ExportDistributionReportButton;
