@@ -9,8 +9,63 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, Users, DollarSign, LockKeyhole, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ExportDistributionReportButton from '@/components/reports/DistributionReport';
+
+// Define the member type
+type Member = {
+  name: string;
+  allocation: number;
+  systemShare: string;
+  initialCost: string;
+  monthlyContribution: string;
+  status: string;
+};
 
 const Payment = () => {
+  // Sample data for community members
+  const communityMembers: Member[] = [
+    { 
+      name: "Sarah Johnson", 
+      allocation: 12.5, 
+      systemShare: "6 kW", 
+      initialCost: "₹3,75,000", 
+      monthlyContribution: "₹1,750",
+      status: "Paid"
+    },
+    { 
+      name: "Michael Chen", 
+      allocation: 10.4, 
+      systemShare: "5 kW", 
+      initialCost: "₹3,12,500", 
+      monthlyContribution: "₹1,400",
+      status: "Pending"
+    },
+    { 
+      name: "Emma Davis", 
+      allocation: 8.3, 
+      systemShare: "4 kW", 
+      initialCost: "₹2,50,000", 
+      monthlyContribution: "₹1,100",
+      status: "Paid"
+    },
+    { 
+      name: "James Wilson", 
+      allocation: 14.6, 
+      systemShare: "7 kW", 
+      initialCost: "₹4,37,500", 
+      monthlyContribution: "₹2,000",
+      status: "Paid"
+    },
+    { 
+      name: "You", 
+      allocation: 8.75, 
+      systemShare: "4.2 kW", 
+      initialCost: "₹2,62,500", 
+      monthlyContribution: "₹1,200",
+      status: "Pending"
+    }
+  ];
+  
   return (
     <div className="min-h-screen">
       <Section className="pt-32 pb-24">
@@ -192,48 +247,7 @@ const Payment = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {[
-                            { 
-                              name: "Sarah Johnson", 
-                              allocation: 12.5, 
-                              systemShare: "6 kW", 
-                              initialCost: "₹3,75,000", 
-                              monthlyContribution: "₹1,750",
-                              status: "Paid"
-                            },
-                            { 
-                              name: "Michael Chen", 
-                              allocation: 10.4, 
-                              systemShare: "5 kW", 
-                              initialCost: "₹3,12,500", 
-                              monthlyContribution: "₹1,400",
-                              status: "Pending"
-                            },
-                            { 
-                              name: "Emma Davis", 
-                              allocation: 8.3, 
-                              systemShare: "4 kW", 
-                              initialCost: "₹2,50,000", 
-                              monthlyContribution: "₹1,100",
-                              status: "Paid"
-                            },
-                            { 
-                              name: "James Wilson", 
-                              allocation: 14.6, 
-                              systemShare: "7 kW", 
-                              initialCost: "₹4,37,500", 
-                              monthlyContribution: "₹2,000",
-                              status: "Paid"
-                            },
-                            { 
-                              name: "You", 
-                              allocation: 8.75, 
-                              systemShare: "4.2 kW", 
-                              initialCost: "₹2,62,500", 
-                              monthlyContribution: "₹1,200",
-                              status: "Pending"
-                            }
-                          ].map((member, index) => (
+                          {communityMembers.map((member, index) => (
                             <tr 
                               key={index} 
                               className={`border-b ${member.name === "You" ? "bg-primary/5" : ""}`}
@@ -271,9 +285,7 @@ const Payment = () => {
                       </p>
                     </div>
                     <div className="flex justify-between w-full">
-                      <Button variant="outline" className="button-animation">
-                        Export Distribution Report
-                      </Button>
+                      <ExportDistributionReportButton members={communityMembers} />
                       <Button className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
                         Adjust Your Allocation
                       </Button>
