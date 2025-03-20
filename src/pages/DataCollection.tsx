@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,60 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { BarChart2, Home, Sun, DollarSign } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { submitEnergyData } from '@/services/api';
+import { Link } from 'react-router-dom';
 
 const DataCollection = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form state
-  const [monthlyUsage, setMonthlyUsage] = useState<string>('');
-  const [averageBill, setAverageBill] = useState<string>('');
-  const [homeSize, setHomeSize] = useState<number[]>([1500]);
-  const [roofType, setRoofType] = useState<string>('');
-  const [address, setAddress] = useState<string>('');
-
-  // Form validation
-  const isFormValid = monthlyUsage && averageBill && roofType && address;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isFormValid) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill out all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    const energyData = {
-      monthlyUsage: Number(monthlyUsage),
-      averageBill: Number(averageBill),
-      homeSize: homeSize[0],
-      roofType,
-      address,
-    };
-    
-    const success = await submitEnergyData(energyData);
-    
-    setIsSubmitting(false);
-    
-    if (success) {
-      // Save data to localStorage for persistence
-      localStorage.setItem('energyData', JSON.stringify(energyData));
-      
-      // Navigate to provider matching page
-      navigate('/provider-matching');
-    }
-  };
-
   return (
     <div className="min-h-screen">
       <Section className="pt-32 pb-24">
@@ -102,88 +51,62 @@ const DataCollection = () => {
           </div>
 
           <div className="w-full max-w-md mx-auto animate-slide-in-left">
-            <form onSubmit={handleSubmit}>
-              <Card className="shadow-soft">
-                <CardHeader>
-                  <CardTitle>Energy Consumption Input</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="monthly-usage">Monthly Usage (kWh)</Label>
-                      <Input 
-                        id="monthly-usage" 
-                        type="number" 
-                        placeholder="e.g. 850" 
-                        value={monthlyUsage}
-                        onChange={(e) => setMonthlyUsage(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
-                      <Input 
-                        id="average-bill" 
-                        type="number" 
-                        placeholder="e.g. 7,500" 
-                        value={averageBill}
-                        onChange={(e) => setAverageBill(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Home Size (sq ft)</Label>
-                      <div className="pt-4 pb-2">
-                        <Slider 
-                          value={homeSize} 
-                          onValueChange={setHomeSize}
-                          max={5000} 
-                          step={100} 
-                        />
-                      </div>
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>500</span>
-                        <span>{homeSize[0]}</span>
-                        <span>5000</span>
-                      </div>
-                    </div>
-                  </div>
-
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle>Energy Consumption Input</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="roof-type">Roof Type</Label>
-                    <Select value={roofType} onValueChange={setRoofType}>
-                      <SelectTrigger id="roof-type">
-                        <SelectValue placeholder="Select roof type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="flat">Flat Roof</SelectItem>
-                        <SelectItem value="sloped">Sloped Roof</SelectItem>
-                        <SelectItem value="metal">Metal Roof</SelectItem>
-                        <SelectItem value="tile">Tile Roof</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="monthly-usage">Monthly Usage (kWh)</Label>
+                    <Input id="monthly-usage" type="number" placeholder="e.g. 850" />
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="address">Property Address</Label>
-                    <Input 
-                      id="address" 
-                      placeholder="Enter your address" 
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                    />
+                    <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
+                    <Input id="average-bill" type="number" placeholder="e.g. 7,500" />
                   </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit"
-                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                    disabled={!isFormValid || isSubmitting}
-                  >
-                    {isSubmitting ? 'Calculating...' : 'Calculate Solar Plan'}
+                  <div className="space-y-2">
+                    <Label>Home Size (sq ft)</Label>
+                    <div className="pt-4 pb-2">
+                      <Slider defaultValue={[1500]} max={5000} step={100} />
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>500</span>
+                      <span>1500</span>
+                      <span>5000</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="roof-type">Roof Type</Label>
+                  <Select>
+                    <SelectTrigger id="roof-type">
+                      <SelectValue placeholder="Select roof type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="flat">Flat Roof</SelectItem>
+                      <SelectItem value="sloped">Sloped Roof</SelectItem>
+                      <SelectItem value="metal">Metal Roof</SelectItem>
+                      <SelectItem value="tile">Tile Roof</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Property Address</Label>
+                  <Input id="address" placeholder="Enter your address" />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Link to="/provider-matching" className="w-full">
+                  <Button className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
+                    Calculate Solar Plan
                   </Button>
-                </CardFooter>
-              </Card>
-            </form>
+                </Link>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       </Section>

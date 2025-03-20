@@ -6,29 +6,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sun, CheckCircle2, CalendarClock, ClipboardList, Star, MessageSquare, DollarSign, ThumbsUp } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { contactProvider, registerVote } from '@/services/api';
 
 const ProviderMatching = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [activeProvider, setActiveProvider] = useState<string | null>(null);
   const [contactFormOpen, setContactFormOpen] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [currentTab, setCurrentTab] = useState("find-installers");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form state
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState('');
-  
+
   const providers = [
     {
       id: "sb-001",
@@ -59,72 +50,33 @@ const ProviderMatching = () => {
     }
   ];
 
-  const handleContactSubmit = async (e: React.FormEvent) => {
+  const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!activeProvider || !name || !email || !message) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill out all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    const contactData = {
-      name,
-      email,
-      phone,
-      message,
-    };
-    
-    const providerId = providers.find(p => p.name === activeProvider)?.id || '';
-    const success = await contactProvider(providerId, contactData);
-    
-    setIsSubmitting(false);
-    
-    if (success) {
-      setFormSubmitted(true);
-      
-      // Reset form
-      setTimeout(() => {
-        setContactFormOpen(false);
-        setFormSubmitted(false);
-        setName('');
-        setEmail('');
-        setPhone('');
-        setMessage('');
-      }, 2000);
-    }
-  };
-
-  const handleRequestQuote = async (providerId: string) => {
-    // Store selected provider in localStorage
-    localStorage.setItem('selectedProvider', providerId);
-    
-    // Store all providers data for later access
-    localStorage.setItem('selectedProviders', JSON.stringify([...providers.filter(p => p.id === providerId)]));
-    
-    // Update UI state
-    setCurrentTab("community-decision");
+    // In a real app, this would send the message to the provider
+    setFormSubmitted(true);
     
     toast({
-      title: "Quote Requested",
-      description: `Your quote has been requested. You can now vote in the community decision.`,
+      title: "Message Sent",
+      description: `Your message has been sent to ${activeProvider}. They will contact you shortly.`,
     });
+    
+    setTimeout(() => {
+      setContactFormOpen(false);
+      setFormSubmitted(false);
+    }, 2000);
   };
 
-  const handleVote = async (providerId: string) => {
-    const success = await registerVote(providerId);
-    
-    if (success) {
-      toast({
-        title: "Vote Recorded",
-        description: "Your vote has been recorded. Thank you for participating!",
-      });
-    }
+  const handleRequestQuote = (providerId: string) => {
+    // Store selected provider in localStorage
+    localStorage.setItem('selectedProvider', providerId);
+    // Then navigate to payment page
+  };
+
+  const handleVote = (providerId: string) => {
+    toast({
+      title: "Vote Recorded",
+      description: "Your vote has been recorded. Thank you for participating!",
+    });
   };
 
   return (
@@ -216,50 +168,23 @@ const ProviderMatching = () => {
                               <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
                                   <Label htmlFor="name" className="text-right">Name</Label>
-                                  <Input 
-                                    id="name" 
-                                    className="col-span-3" 
-                                    required 
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                  />
+                                  <Input id="name" className="col-span-3" required />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
                                   <Label htmlFor="email" className="text-right">Email</Label>
-                                  <Input 
-                                    id="email" 
-                                    type="email" 
-                                    className="col-span-3" 
-                                    required 
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                  />
+                                  <Input id="email" type="email" className="col-span-3" required />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
                                   <Label htmlFor="phone" className="text-right">Phone</Label>
-                                  <Input 
-                                    id="phone" 
-                                    type="tel" 
-                                    className="col-span-3" 
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                  />
+                                  <Input id="phone" type="tel" className="col-span-3" />
                                 </div>
                                 <div className="grid grid-cols-4 items-start gap-4">
                                   <Label htmlFor="message" className="text-right">Message</Label>
-                                  <Textarea 
-                                    id="message" 
-                                    className="col-span-3" 
-                                    required 
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                  />
+                                  <Textarea id="message" className="col-span-3" required />
                                 </div>
                               </div>
                               <DialogFooter>
-                                <Button type="submit" disabled={isSubmitting}>
-                                  {isSubmitting ? 'Sending...' : 'Send Message'}
-                                </Button>
+                                <Button type="submit">Send Message</Button>
                               </DialogFooter>
                             </form>
                           ) : (
@@ -274,7 +199,15 @@ const ProviderMatching = () => {
                       <Button 
                         size="sm" 
                         className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                        onClick={() => handleRequestQuote(provider.id)}
+                        onClick={() => {
+                          handleRequestQuote(provider.id);
+                          localStorage.setItem('selectedProviders', JSON.stringify([...providers.filter(p => p.id === provider.id)]));
+                          setCurrentTab("community-decision");
+                          toast({
+                            title: "Quote Requested",
+                            description: `Your quote has been requested from ${provider.name}. You can now vote in the community decision.`,
+                          });
+                        }}
                       >
                         Request Quote
                       </Button>
