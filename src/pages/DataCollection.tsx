@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +8,83 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { BarChart2, Home, Sun, DollarSign } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { submitEnergyData } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 const DataCollection = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    monthlyUsage: '',
+    averageBill: '',
+    homeSize: 1500,
+    roofType: '',
+    address: ''
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSliderChange = (value: number[]) => {
+    setFormData(prev => ({ ...prev, homeSize: value[0] }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({ ...prev, roofType: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form inputs
+    if (!formData.monthlyUsage || !formData.averageBill || !formData.roofType || !formData.address) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill out all fields before submitting.",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Process the data to ensure numbers are properly formatted
+      const dataToSubmit = {
+        ...formData,
+        monthlyUsage: parseFloat(formData.monthlyUsage),
+        averageBill: parseFloat(formData.averageBill)
+      };
+      
+      // Submit to Spring Boot backend
+      const response = await submitEnergyData(dataToSubmit);
+      
+      toast({
+        title: "Data Submitted Successfully",
+        description: "Your energy consumption data has been processed.",
+      });
+      
+      // Store the response data in localStorage for use in other pages
+      localStorage.setItem('solarPlanData', JSON.stringify(response));
+      
+      // Navigate to the next page
+      navigate('/provider-matching');
+    } catch (error) {
+      console.error('Error submitting energy data:', error);
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "There was a problem sending your data. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Section className="pt-32 pb-24">
@@ -52,60 +126,87 @@ const DataCollection = () => {
 
           <div className="w-full max-w-md mx-auto animate-slide-in-left">
             <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle>Energy Consumption Input</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="monthly-usage">Monthly Usage (kWh)</Label>
-                    <Input id="monthly-usage" type="number" placeholder="e.g. 850" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
-                    <Input id="average-bill" type="number" placeholder="e.g. 7,500" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Home Size (sq ft)</Label>
-                    <div className="pt-4 pb-2">
-                      <Slider defaultValue={[1500]} max={5000} step={100} />
+              <form onSubmit={handleSubmit}>
+                <CardHeader>
+                  <CardTitle>Energy Consumption Input</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="monthlyUsage">Monthly Usage (kWh)</Label>
+                      <Input 
+                        id="monthlyUsage" 
+                        type="number" 
+                        placeholder="e.g. 850" 
+                        value={formData.monthlyUsage}
+                        onChange={handleInputChange}
+                      />
                     </div>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>500</span>
-                      <span>1500</span>
-                      <span>5000</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="averageBill">Average Monthly Bill (₹)</Label>
+                      <Input 
+                        id="averageBill" 
+                        type="number" 
+                        placeholder="e.g. 7,500" 
+                        value={formData.averageBill}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Home Size (sq ft)</Label>
+                      <div className="pt-4 pb-2">
+                        <Slider 
+                          defaultValue={[1500]} 
+                          value={[formData.homeSize]}
+                          onValueChange={handleSliderChange}
+                          max={5000} 
+                          step={100} 
+                        />
+                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>500</span>
+                        <span>{formData.homeSize}</span>
+                        <span>5000</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="roof-type">Roof Type</Label>
-                  <Select>
-                    <SelectTrigger id="roof-type">
-                      <SelectValue placeholder="Select roof type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="flat">Flat Roof</SelectItem>
-                      <SelectItem value="sloped">Sloped Roof</SelectItem>
-                      <SelectItem value="metal">Metal Roof</SelectItem>
-                      <SelectItem value="tile">Tile Roof</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="roofType">Roof Type</Label>
+                    <Select onValueChange={handleSelectChange} value={formData.roofType}>
+                      <SelectTrigger id="roofType">
+                        <SelectValue placeholder="Select roof type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="flat">Flat Roof</SelectItem>
+                        <SelectItem value="sloped">Sloped Roof</SelectItem>
+                        <SelectItem value="metal">Metal Roof</SelectItem>
+                        <SelectItem value="tile">Tile Roof</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address">Property Address</Label>
-                  <Input id="address" placeholder="Enter your address" />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Link to="/provider-matching" className="w-full">
-                  <Button className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                    Calculate Solar Plan
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Property Address</Label>
+                    <Input 
+                      id="address" 
+                      placeholder="Enter your address" 
+                      value={formData.address}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    type="submit"
+                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                    disabled={loading}
+                  >
+                    {loading ? 'Processing...' : 'Calculate Solar Plan'}
                   </Button>
-                </Link>
-              </CardFooter>
+                </CardFooter>
+              </form>
             </Card>
           </div>
         </div>
