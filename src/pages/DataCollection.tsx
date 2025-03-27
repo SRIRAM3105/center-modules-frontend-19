@@ -1,5 +1,5 @@
-
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,70 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { BarChart2, Home, Sun, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { energyDataAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 const DataCollection = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Form state
+  const [monthlyUsage, setMonthlyUsage] = useState('');
+  const [monthlyBill, setMonthlyBill] = useState('');
+  const [homeSize, setHomeSize] = useState([1500]);
+  const [roofType, setRoofType] = useState('');
+  const [address, setAddress] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle form submission
+  const handleCalculateSolarPlan = async () => {
+    if (!monthlyUsage || !monthlyBill || !roofType || !address) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare energy data object
+      const energyData = {
+        monthlyUsage: Number(monthlyUsage),
+        monthlyBill: Number(monthlyBill),
+        homeSize: homeSize[0],
+        roofType,
+        address
+      };
+
+      // Submit to backend
+      const result = await energyDataAPI.calculateSolarPlan(energyData);
+      
+      // Store result in localStorage for access in provider matching page
+      localStorage.setItem('solarPlanData', JSON.stringify(result));
+      
+      toast({
+        title: "Solar Plan Calculated",
+        description: "Your personalized solar plan has been calculated successfully!",
+        variant: "default",
+      });
+      
+      // Navigate to provider matching page
+      navigate('/provider-matching');
+    } catch (error) {
+      console.error('Error calculating solar plan:', error);
+      toast({
+        title: "Calculation Failed",
+        description: "There was an error calculating your solar plan. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Section className="pt-32 pb-24">
@@ -59,20 +121,37 @@ const DataCollection = () => {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="monthly-usage">Monthly Usage (kWh)</Label>
-                    <Input id="monthly-usage" type="number" placeholder="e.g. 850" />
+                    <Input 
+                      id="monthly-usage" 
+                      type="number" 
+                      placeholder="e.g. 850" 
+                      value={monthlyUsage}
+                      onChange={(e) => setMonthlyUsage(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
-                    <Input id="average-bill" type="number" placeholder="e.g. 7,500" />
+                    <Input 
+                      id="average-bill" 
+                      type="number" 
+                      placeholder="e.g. 7,500" 
+                      value={monthlyBill}
+                      onChange={(e) => setMonthlyBill(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Home Size (sq ft)</Label>
                     <div className="pt-4 pb-2">
-                      <Slider defaultValue={[1500]} max={5000} step={100} />
+                      <Slider 
+                        value={homeSize} 
+                        onValueChange={setHomeSize} 
+                        max={5000} 
+                        step={100} 
+                      />
                     </div>
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>500</span>
-                      <span>1500</span>
+                      <span>{homeSize[0]}</span>
                       <span>5000</span>
                     </div>
                   </div>
@@ -80,7 +159,7 @@ const DataCollection = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="roof-type">Roof Type</Label>
-                  <Select>
+                  <Select value={roofType} onValueChange={setRoofType}>
                     <SelectTrigger id="roof-type">
                       <SelectValue placeholder="Select roof type" />
                     </SelectTrigger>
@@ -96,15 +175,22 @@ const DataCollection = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="address">Property Address</Label>
-                  <Input id="address" placeholder="Enter your address" />
+                  <Input 
+                    id="address" 
+                    placeholder="Enter your address" 
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
                 </div>
               </CardContent>
               <CardFooter>
-                <Link to="/provider-matching" className="w-full">
-                  <Button className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                    Calculate Solar Plan
-                  </Button>
-                </Link>
+                <Button 
+                  className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                  onClick={handleCalculateSolarPlan}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Calculating...' : 'Calculate Solar Plan'}
+                </Button>
               </CardFooter>
             </Card>
           </div>
