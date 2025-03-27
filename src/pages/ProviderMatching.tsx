@@ -1,100 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import React, { useState } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sun, CheckCircle2, CalendarClock, ClipboardList, Star, MessageSquare, DollarSign, ThumbsUp, AlertCircle, Users } from 'lucide-react';
+import { Sun, CheckCircle2, CalendarClock, ClipboardList, Star, MessageSquare, DollarSign, ThumbsUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { providerAPI } from '@/services/api';
 
 const ProviderMatching = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const [providers, setProviders] = useState([]);
-  const [activeProvider, setActiveProvider] = useState(null);
+  const [activeProvider, setActiveProvider] = useState<string | null>(null);
   const [contactFormOpen, setContactFormOpen] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [currentTab, setCurrentTab] = useState("find-installers");
-  const [loading, setLoading] = useState(false);
-  const [votedProvider, setVotedProvider] = useState('');
-  const [majorityProvider, setMajorityProvider] = useState(null);
 
-  useEffect(() => {
-    const fetchProviders = async () => {
-      try {
-        setLoading(true);
-        const data = await providerAPI.getProviders();
-        setProviders(data || []);
-      } catch (error) {
-        console.error('Error fetching providers:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load solar providers. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProviders();
-  }, [toast]);
-
-  useEffect(() => {
-    if (!loading && providers.length === 0) {
-      setProviders([
-        {
-          id: "sb-001",
-          name: "SolarBright Solutions",
-          rating: 4.9,
-          reviews: 128,
-          certified: true,
-          yearsExperience: 12,
-          image: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2564&q=80",
-          votes: 68,
-          totalCost: "₹24,850",
-          timeframe: "4-6 weeks",
-          quotedDate: "May 15, 2023"
-        },
-        {
-          id: "gp-002",
-          name: "GreenPower Installations",
-          rating: 4.7,
-          reviews: 95,
-          certified: true,
-          yearsExperience: 8,
-          image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80",
-          votes: 42,
-          totalCost: "₹26,320",
-          timeframe: "3-5 weeks",
-          quotedDate: "May 18, 2023"
-        },
-        {
-          id: "st-003",
-          name: "SunTech Providers",
-          rating: 4.8,
-          reviews: 156,
-          certified: true,
-          yearsExperience: 15,
-          image: "https://images.unsplash.com/photo-1611365892117-bdf9aede0cd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80",
-          votes: 53,
-          totalCost: "₹25,100",
-          timeframe: "5-7 weeks",
-          quotedDate: "May 14, 2023"
-        }
-      ]);
+  const providers = [
+    {
+      id: "sb-001",
+      name: "SolarBright Solutions",
+      rating: 4.9,
+      reviews: 128,
+      certified: true,
+      yearsExperience: 12,
+      image: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2564&q=80"
+    },
+    {
+      id: "gp-002",
+      name: "GreenPower Installations",
+      rating: 4.7,
+      reviews: 95,
+      certified: true,
+      yearsExperience: 8,
+      image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80"
+    },
+    {
+      id: "st-003",
+      name: "SunTech Providers",
+      rating: 4.8,
+      reviews: 156,
+      certified: true,
+      yearsExperience: 15,
+      image: "https://images.unsplash.com/photo-1611365892117-bdf9aede0cd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80"
     }
-  }, [loading, providers]);
+  ];
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // In a real app, this would send the message to the provider
     setFormSubmitted(true);
     
     toast({
@@ -108,81 +66,17 @@ const ProviderMatching = () => {
     }, 2000);
   };
 
-  const handleRequestQuote = async (providerId) => {
-    try {
-      setLoading(true);
-      await providerAPI.selectProvider(providerId);
-      
-      const selectedProvider = providers.find(p => p.id === providerId);
-      localStorage.setItem('selectedProviders', JSON.stringify([selectedProvider]));
-      
-      setCurrentTab("community-decision");
-      
-      toast({
-        title: "Quote Requested",
-        description: `Your quote has been requested from ${selectedProvider.name}. You can now vote in the community decision.`,
-      });
-    } catch (error) {
-      console.error('Error requesting quote:', error);
-      toast({
-        title: "Error",
-        description: "Failed to request quote. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleRequestQuote = (providerId: string) => {
+    // Store selected provider in localStorage
+    localStorage.setItem('selectedProvider', providerId);
+    // Then navigate to payment page
   };
 
-  const handleVote = async (providerId) => {
-    try {
-      setLoading(true);
-      await providerAPI.voteForProvider(providerId);
-      
-      setVotedProvider(providerId);
-      
-      setProviders(providers.map(provider => {
-        if (provider.id === providerId) {
-          return { ...provider, votes: provider.votes + 1 };
-        }
-        return provider;
-      }));
-      
-      toast({
-        title: "Vote Recorded",
-        description: "Your vote has been recorded. Thank you for participating in the community decision!",
-      });
-      
-      checkMajorityVote();
-    } catch (error) {
-      console.error('Error voting for provider:', error);
-      toast({
-        title: "Error",
-        description: "Failed to record your vote. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkMajorityVote = async () => {
-    try {
-      const majorityData = await providerAPI.getMajorityVotedProvider();
-      
-      if (majorityData && majorityData.providerId) {
-        const majorityProvider = providers.find(p => p.id === majorityData.providerId);
-        setMajorityProvider(majorityProvider);
-        
-        localStorage.setItem('majorityProvider', JSON.stringify(majorityProvider));
-      }
-    } catch (error) {
-      console.error('Error checking majority vote:', error);
-    }
-  };
-
-  const proceedToPayment = () => {
-    navigate('/payment');
+  const handleVote = (providerId: string) => {
+    toast({
+      title: "Vote Recorded",
+      description: "Your vote has been recorded. Thank you for participating!",
+    });
   };
 
   return (
@@ -217,184 +111,172 @@ const ProviderMatching = () => {
             </TabsList>
 
             <TabsContent value="find-installers" className="animate-fade-in">
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <div className="text-center">
-                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading solar providers...</p>
-                  </div>
-                </div>
-              ) : providers.length === 0 ? (
-                <div className="text-center py-12">
-                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Providers Available</h3>
-                  <p className="text-muted-foreground">No solar providers are currently available in your area.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {providers.map((provider, index) => (
-                    <Card key={provider.id} className="shadow-soft overflow-hidden animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
-                      <div className="relative h-48 overflow-hidden">
-                        <img 
-                          src={provider.image || "https://images.unsplash.com/photo-1611365892117-bdf9aede0cd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80"} 
-                          alt={provider.name} 
-                          className="w-full h-full object-cover" 
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80";
-                          }}
-                        />
-                        {provider.certified && (
-                          <div className="absolute top-3 right-3">
-                            <Badge className="bg-primary text-white">
-                              <CheckCircle2 className="h-3 w-3 mr-1" /> Certified
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <CardHeader>
-                        <CardTitle>{provider.name}</CardTitle>
-                        <CardDescription className="flex items-center">
-                          <div className="flex items-center text-amber-500">
-                            <Star className="h-4 w-4 fill-current" />
-                            <span className="ml-1 text-foreground font-medium">{provider.rating}</span>
-                          </div>
-                          <span className="mx-2 text-muted-foreground">•</span>
-                          <span>{provider.reviews} reviews</span>
-                          <span className="mx-2 text-muted-foreground">•</span>
-                          <span>{provider.yearsExperience} years</span>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground text-sm">
-                          Specializing in residential and community solar installations with excellent customer service and competitive pricing.
-                        </p>
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        <Dialog open={contactFormOpen && activeProvider === provider.name} onOpenChange={(open) => {
-                          setContactFormOpen(open);
-                          if (open) setActiveProvider(provider.name);
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="button-animation">
-                              <MessageSquare className="h-4 w-4 mr-2" /> Contact
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                              <DialogTitle>Contact {provider.name}</DialogTitle>
-                              <DialogDescription>
-                                Send a message to this provider to discuss your solar needs.
-                              </DialogDescription>
-                            </DialogHeader>
-                            {!formSubmitted ? (
-                              <form onSubmit={handleContactSubmit}>
-                                <div className="grid gap-4 py-4">
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="name" className="text-right">Name</Label>
-                                    <Input id="name" className="col-span-3" required />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="email" className="text-right">Email</Label>
-                                    <Input id="email" type="email" className="col-span-3" required />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="phone" className="text-right">Phone</Label>
-                                    <Input id="phone" type="tel" className="col-span-3" />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-start gap-4">
-                                    <Label htmlFor="message" className="text-right">Message</Label>
-                                    <Textarea id="message" className="col-span-3" required />
-                                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {providers.map((provider, index) => (
+                  <Card key={index} className="shadow-soft overflow-hidden animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
+                    <div className="relative h-48 overflow-hidden">
+                      <img 
+                        src={provider.image} 
+                        alt={provider.name} 
+                        className="w-full h-full object-cover" 
+                      />
+                      {provider.certified && (
+                        <div className="absolute top-3 right-3">
+                          <Badge className="bg-primary text-white">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Certified
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader>
+                      <CardTitle>{provider.name}</CardTitle>
+                      <CardDescription className="flex items-center">
+                        <div className="flex items-center text-amber-500">
+                          <Star className="h-4 w-4 fill-current" />
+                          <span className="ml-1 text-foreground font-medium">{provider.rating}</span>
+                        </div>
+                        <span className="mx-2 text-muted-foreground">•</span>
+                        <span>{provider.reviews} reviews</span>
+                        <span className="mx-2 text-muted-foreground">•</span>
+                        <span>{provider.yearsExperience} years</span>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground text-sm">
+                        Specializing in residential and community solar installations with excellent customer service and competitive pricing.
+                      </p>
+                    </CardContent>
+                    <CardFooter className="flex justify-between">
+                      <Dialog open={contactFormOpen && activeProvider === provider.name} onOpenChange={(open) => {
+                        setContactFormOpen(open);
+                        if (open) setActiveProvider(provider.name);
+                      }}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="button-animation">
+                            <MessageSquare className="h-4 w-4 mr-2" /> Contact
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Contact {provider.name}</DialogTitle>
+                            <DialogDescription>
+                              Send a message to this provider to discuss your solar needs.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {!formSubmitted ? (
+                            <form onSubmit={handleContactSubmit}>
+                              <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="name" className="text-right">Name</Label>
+                                  <Input id="name" className="col-span-3" required />
                                 </div>
-                                <DialogFooter>
-                                  <Button type="submit">Send Message</Button>
-                                </DialogFooter>
-                              </form>
-                            ) : (
-                              <div className="py-6 text-center">
-                                <CheckCircle2 className="mx-auto h-10 w-10 text-green-500 mb-4" />
-                                <p className="text-lg font-medium">Message Sent!</p>
-                                <p className="text-muted-foreground">The provider will contact you soon.</p>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="email" className="text-right">Email</Label>
+                                  <Input id="email" type="email" className="col-span-3" required />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                  <Label htmlFor="phone" className="text-right">Phone</Label>
+                                  <Input id="phone" type="tel" className="col-span-3" />
+                                </div>
+                                <div className="grid grid-cols-4 items-start gap-4">
+                                  <Label htmlFor="message" className="text-right">Message</Label>
+                                  <Textarea id="message" className="col-span-3" required />
+                                </div>
                               </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        <Button 
-                          size="sm" 
-                          className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                          onClick={() => handleRequestQuote(provider.id)}
-                          disabled={loading}
-                        >
-                          {loading ? 'Processing...' : 'Request Quote'}
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                              <DialogFooter>
+                                <Button type="submit">Send Message</Button>
+                              </DialogFooter>
+                            </form>
+                          ) : (
+                            <div className="py-6 text-center">
+                              <CheckCircle2 className="mx-auto h-10 w-10 text-green-500 mb-4" />
+                              <p className="text-lg font-medium">Message Sent!</p>
+                              <p className="text-muted-foreground">The provider will contact you soon.</p>
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                      <Button 
+                        size="sm" 
+                        className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                        onClick={() => {
+                          handleRequestQuote(provider.id);
+                          localStorage.setItem('selectedProviders', JSON.stringify([...providers.filter(p => p.id === provider.id)]));
+                          setCurrentTab("community-decision");
+                          toast({
+                            title: "Quote Requested",
+                            description: `Your quote has been requested from ${provider.name}. You can now vote in the community decision.`,
+                          });
+                        }}
+                      >
+                        Request Quote
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
             </TabsContent>
 
             <TabsContent value="community-decision" className="animate-fade-in">
               <div className="max-w-4xl mx-auto">
                 <Card className="shadow-soft mb-8">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Users className="h-5 w-5 mr-2 text-primary" />
-                      Community Voting
-                    </CardTitle>
+                    <CardTitle>Community Voting</CardTitle>
                     <CardDescription>
-                      Vote on which solar provider your community should choose for the installation. The provider with the majority votes will be automatically selected.
+                      Vote on which solar provider your community should choose for the installation.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
-                      {providers.map((provider, index) => (
-                        <div key={index} className="p-4 rounded-lg border border-border bg-white flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div className="mb-4 md:mb-0">
-                            <h3 className="font-medium text-lg">{provider.name}</h3>
-                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                              <span className="flex items-center">
-                                <DollarSign className="h-4 w-4 mr-1" /> {provider.totalCost}
-                              </span>
-                              <span className="flex items-center">
-                                <CalendarClock className="h-4 w-4 mr-1" /> {provider.timeframe}
-                              </span>
-                              <span className="flex items-center">
-                                <ClipboardList className="h-4 w-4 mr-1" /> Quoted: {provider.quotedDate}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <div className="text-center">
-                                <span className="text-2xl font-bold">{provider.votes}</span>
-                                <p className="text-xs text-muted-foreground">Votes</p>
+                      {providers.map((provider, index) => {
+                        const votes = provider.id === "sb-001" ? 68 : provider.id === "gp-002" ? 42 : 53;
+                        const totalCost = provider.id === "sb-001" ? "₹24,850" : provider.id === "gp-002" ? "₹26,320" : "₹25,100";
+                        const timeframe = provider.id === "sb-001" ? "4-6 weeks" : provider.id === "gp-002" ? "3-5 weeks" : "5-7 weeks";
+                        const quotedDate = provider.id === "sb-001" ? "May 15, 2023" : provider.id === "gp-002" ? "May 18, 2023" : "May 14, 2023";
+                        
+                        return (
+                          <div key={index} className="p-4 rounded-lg border border-border bg-white flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div className="mb-4 md:mb-0">
+                              <h3 className="font-medium text-lg">{provider.name}</h3>
+                              <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                                <span className="flex items-center">
+                                  <DollarSign className="h-4 w-4 mr-1" /> {totalCost}
+                                </span>
+                                <span className="flex items-center">
+                                  <CalendarClock className="h-4 w-4 mr-1" /> {timeframe}
+                                </span>
+                                <span className="flex items-center">
+                                  <ClipboardList className="h-4 w-4 mr-1" /> Quoted: {quotedDate}
+                                </span>
                               </div>
                             </div>
-                            <Button 
-                              variant={votedProvider === provider.id ? "default" : "outline"} 
-                              className="button-animation"
-                              onClick={() => handleVote(provider.id)}
-                              disabled={loading || votedProvider === provider.id}
-                            >
-                              <ThumbsUp className="h-4 w-4 mr-2" /> 
-                              {votedProvider === provider.id ? 'Voted' : 'Cast Vote'}
-                            </Button>
+                            <div className="flex items-center space-x-4">
+                              <div>
+                                <div className="text-center">
+                                  <span className="text-2xl font-bold">{votes}</span>
+                                  <p className="text-xs text-muted-foreground">Votes</p>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                className="button-animation"
+                                onClick={() => handleVote(provider.id)}
+                              >
+                                <ThumbsUp className="h-4 w-4 mr-2" /> Cast Vote
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-between items-center">
+                  <CardFooter className="flex justify-between">
                     <p className="text-sm text-muted-foreground">Voting ends in: 3 days, 8 hours</p>
-                    <Button 
-                      className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                      onClick={proceedToPayment}
-                      disabled={loading}
-                    >
-                      Proceed to Payment
-                    </Button>
+                    <Link to="/payment">
+                      <Button className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
+                        Proceed to Payment
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
 
@@ -402,68 +284,40 @@ const ProviderMatching = () => {
                   <CardHeader>
                     <CardTitle>Final Selection</CardTitle>
                     <CardDescription>
-                      After voting is complete, the community will finalize the selection based on majority votes.
+                      After voting is complete, the community will finalize the selection.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {majorityProvider ? (
-                      <div className="p-6 border border-green-200 bg-green-50 rounded-lg">
-                        <div className="flex items-center mb-4">
-                          <CheckCircle2 className="h-6 w-6 text-green-500 mr-3" />
-                          <h3 className="text-lg font-medium">Majority Vote Determined</h3>
-                        </div>
-                        <p className="mb-4">
-                          <strong>{majorityProvider.name}</strong> has received the majority of community votes and will be selected as your solar installation provider.
-                        </p>
-                        <div className="flex flex-wrap gap-6 text-sm">
-                          <div className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1 text-primary" />
-                            <span>Total Cost: {majorityProvider.totalCost}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <CalendarClock className="h-4 w-4 mr-1 text-primary" />
-                            <span>Timeframe: {majorityProvider.timeframe}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-1 text-primary" />
-                            <span>Votes: {majorityProvider.votes}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <p className="text-muted-foreground">
-                          The final selection process considers:
-                        </p>
-                        <ul className="space-y-2">
-                          <li className="flex items-start">
-                            <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
-                            <span>Community vote results (majority decision)</span>
-                          </li>
-                          <li className="flex items-start">
-                            <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
-                            <span>Cost-benefit analysis</span>
-                          </li>
-                          <li className="flex items-start">
-                            <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
-                            <span>Provider certifications and experience</span>
-                          </li>
-                          <li className="flex items-start">
-                            <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
-                            <span>Timeline and availability</span>
-                          </li>
-                        </ul>
-                      </div>
-                    )}
+                    <div className="space-y-4">
+                      <p className="text-muted-foreground">
+                        The final selection process considers:
+                      </p>
+                      <ul className="space-y-2">
+                        <li className="flex items-start">
+                          <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
+                          <span>Community vote results</span>
+                        </li>
+                        <li className="flex items-start">
+                          <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
+                          <span>Cost-benefit analysis</span>
+                        </li>
+                        <li className="flex items-start">
+                          <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
+                          <span>Provider certifications and experience</span>
+                        </li>
+                        <li className="flex items-start">
+                          <CheckCircle2 className="h-5 w-5 text-primary mr-2 mt-0.5" />
+                          <span>Timeline and availability</span>
+                        </li>
+                      </ul>
+                    </div>
                   </CardContent>
                   <CardFooter>
-                    <Button 
-                      className="w-full button-animation"
-                      onClick={proceedToPayment}
-                      disabled={loading}
-                    >
-                      Proceed to Payment
-                    </Button>
+                    <Link to="/payment" className="w-full">
+                      <Button className="w-full button-animation">
+                        Proceed to Payment
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               </div>
@@ -581,9 +435,11 @@ const ProviderMatching = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" className="w-full button-animation">
-                      View All Updates
-                    </Button>
+                    <Link to="/payment" className="w-full">
+                      <Button variant="outline" className="w-full button-animation">
+                        View All Updates
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               </div>
