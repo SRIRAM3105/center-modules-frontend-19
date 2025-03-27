@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { BarChart2, Home, Sun, DollarSign } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { energyDataAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,10 +47,13 @@ const DataCollection = () => {
       };
 
       // Submit to backend
-      const result = await energyDataAPI.calculateSolarPlan(energyData);
+      const result = await energyDataAPI.submitEnergyData(energyData);
+      
+      // Calculate solar plan
+      const solarPlan = await energyDataAPI.calculateSolarPlan(energyData);
       
       // Store result in localStorage for access in provider matching page
-      localStorage.setItem('solarPlanData', JSON.stringify(result));
+      localStorage.setItem('solarPlanData', JSON.stringify(solarPlan));
       
       toast({
         title: "Solar Plan Calculated",

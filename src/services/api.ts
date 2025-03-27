@@ -92,6 +92,26 @@ export const providerAPI = {
       console.error('Error selecting provider:', error);
       throw error;
     }
+  },
+  
+  voteForProvider: async (providerId) => {
+    try {
+      const response = await apiClient.post('/vote-provider', { providerId });
+      return response.data;
+    } catch (error) {
+      console.error('Error voting for provider:', error);
+      throw error;
+    }
+  },
+  
+  getMajorityVotedProvider: async () => {
+    try {
+      const response = await apiClient.get('/majority-voted-provider');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching majority voted provider:', error);
+      throw error;
+    }
   }
 };
 
