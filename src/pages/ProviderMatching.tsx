@@ -17,78 +17,23 @@ import { providerAPI } from '@/services/api';
 const ProviderMatching = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [providers, setProviders] = useState<any[]>([]);
-  const [activeProvider, setActiveProvider] = useState<string | null>(null);
+  const [providers, setProviders] = useState([]);
+  const [activeProvider, setActiveProvider] = useState(null);
   const [contactFormOpen, setContactFormOpen] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [currentTab, setCurrentTab] = useState("find-installers");
   const [loading, setLoading] = useState(false);
   const [votedProvider, setVotedProvider] = useState('');
-  const [majorityProvider, setMajorityProvider] = useState<any>(null);
+  const [majorityProvider, setMajorityProvider] = useState(null);
 
   useEffect(() => {
     const fetchProviders = async () => {
       try {
         setLoading(true);
-        const mockProviders = [
-          {
-            id: "sb-001",
-            name: "SolarBright Solutions",
-            rating: 4.9,
-            reviews: 128,
-            certified: true,
-            yearsExperience: 12,
-            image: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2564&q=80",
-            votes: 68,
-            totalCost: "₹24,850",
-            timeframe: "4-6 weeks",
-            quotedDate: "May 15, 2023"
-          },
-          {
-            id: "gp-002",
-            name: "GreenPower Installations",
-            rating: 4.7,
-            reviews: 95,
-            certified: true,
-            yearsExperience: 8,
-            image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80",
-            votes: 42,
-            totalCost: "₹26,320",
-            timeframe: "3-5 weeks",
-            quotedDate: "May 18, 2023"
-          },
-          {
-            id: "st-003",
-            name: "SunTech Providers",
-            rating: 4.8,
-            reviews: 156,
-            certified: true,
-            yearsExperience: 15,
-            image: "https://images.unsplash.com/photo-1611365892117-bdf9aede0cd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80",
-            votes: 53,
-            totalCost: "₹25,100",
-            timeframe: "5-7 weeks",
-            quotedDate: "May 14, 2023"
-          }
-        ];
-        
-        try {
-          const data = await providerAPI.getProviders();
-          if (data && data.length > 0) {
-            setProviders(data);
-          } else {
-            setProviders(mockProviders);
-          }
-        } catch (error) {
-          console.error('Error fetching providers from API:', error);
-          setProviders(mockProviders);
-          toast({
-            title: "API Connection Issue",
-            description: "Using sample provider data for demonstration",
-          });
-        }
+        const data = await providerAPI.getProviders();
+        setProviders(data || []);
       } catch (error) {
-        console.error('Error in fetchProviders:', error);
+        console.error('Error fetching providers:', error);
         toast({
           title: "Error",
           description: "Failed to load solar providers. Please try again.",
@@ -102,7 +47,53 @@ const ProviderMatching = () => {
     fetchProviders();
   }, [toast]);
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!loading && providers.length === 0) {
+      setProviders([
+        {
+          id: "sb-001",
+          name: "SolarBright Solutions",
+          rating: 4.9,
+          reviews: 128,
+          certified: true,
+          yearsExperience: 12,
+          image: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2564&q=80",
+          votes: 68,
+          totalCost: "₹24,850",
+          timeframe: "4-6 weeks",
+          quotedDate: "May 15, 2023"
+        },
+        {
+          id: "gp-002",
+          name: "GreenPower Installations",
+          rating: 4.7,
+          reviews: 95,
+          certified: true,
+          yearsExperience: 8,
+          image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80",
+          votes: 42,
+          totalCost: "₹26,320",
+          timeframe: "3-5 weeks",
+          quotedDate: "May 18, 2023"
+        },
+        {
+          id: "st-003",
+          name: "SunTech Providers",
+          rating: 4.8,
+          reviews: 156,
+          certified: true,
+          yearsExperience: 15,
+          image: "https://images.unsplash.com/photo-1611365892117-bdf9aede0cd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80",
+          votes: 53,
+          totalCost: "₹25,100",
+          timeframe: "5-7 weeks",
+          quotedDate: "May 14, 2023"
+        }
+      ]);
+    }
+  }, [loading, providers]);
+
+  const handleContactSubmit = (e) => {
     e.preventDefault();
     setFormSubmitted(true);
     
@@ -117,15 +108,10 @@ const ProviderMatching = () => {
     }, 2000);
   };
 
-  const handleRequestQuote = async (providerId: string) => {
+  const handleRequestQuote = async (providerId) => {
     try {
       setLoading(true);
-      
-      try {
-        await providerAPI.selectProvider(providerId);
-      } catch (error) {
-        console.error('Error selecting provider:', error);
-      }
+      await providerAPI.selectProvider(providerId);
       
       const selectedProvider = providers.find(p => p.id === providerId);
       localStorage.setItem('selectedProviders', JSON.stringify([selectedProvider]));
@@ -148,15 +134,10 @@ const ProviderMatching = () => {
     }
   };
 
-  const handleVote = async (providerId: string) => {
+  const handleVote = async (providerId) => {
     try {
       setLoading(true);
-      
-      try {
-        await providerAPI.voteForProvider(providerId);
-      } catch (error) {
-        console.error('Error voting via API:', error);
-      }
+      await providerAPI.voteForProvider(providerId);
       
       setVotedProvider(providerId);
       
@@ -187,27 +168,13 @@ const ProviderMatching = () => {
 
   const checkMajorityVote = async () => {
     try {
-      let majorityData = null;
-      try {
-        majorityData = await providerAPI.getMajorityVotedProvider();
-      } catch (error) {
-        console.error('Error fetching from API:', error);
-      }
+      const majorityData = await providerAPI.getMajorityVotedProvider();
       
       if (majorityData && majorityData.providerId) {
         const majorityProvider = providers.find(p => p.id === majorityData.providerId);
         setMajorityProvider(majorityProvider);
+        
         localStorage.setItem('majorityProvider', JSON.stringify(majorityProvider));
-        return;
-      }
-      
-      const voteCounts = providers.map(p => p.votes);
-      const maxVotes = Math.max(...voteCounts);
-      const winningProvider = providers.find(p => p.votes === maxVotes);
-      
-      if (winningProvider) {
-        setMajorityProvider(winningProvider);
-        localStorage.setItem('majorityProvider', JSON.stringify(winningProvider));
       }
     } catch (error) {
       console.error('Error checking majority vote:', error);
@@ -217,12 +184,6 @@ const ProviderMatching = () => {
   const proceedToPayment = () => {
     navigate('/payment');
   };
-
-  useEffect(() => {
-    if (providers.length > 0 && votedProvider) {
-      checkMajorityVote();
-    }
-  }, [providers, votedProvider]);
 
   return (
     <div className="min-h-screen">
@@ -279,9 +240,8 @@ const ProviderMatching = () => {
                           alt={provider.name} 
                           className="w-full h-full object-cover" 
                           onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80";
+                            e.target.onerror = null;
+                            e.target.src = "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80";
                           }}
                         />
                         {provider.certified && (
