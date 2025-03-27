@@ -26,137 +26,81 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Helper function to safely handle API calls
+const safeApiCall = async (apiCall) => {
+  try {
+    const response = await apiCall();
+    return response.data;
+  } catch (error) {
+    console.error('API Error:', error);
+    // If it's a connection error or server is not available, fail silently
+    if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+      console.warn('API connection issue - returning null');
+      return null;
+    }
+    throw error;
+  }
+};
+
 // Community data endpoints
 export const communityAPI = {
   getCommunityDetails: async () => {
-    try {
-      const response = await apiClient.get('/community-details');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching community details:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.get('/community-details'));
   },
   
   updateAllocation: async (newAllocation) => {
-    try {
-      const response = await apiClient.post('/update-allocation', { allocation: newAllocation });
-      return response.data;
-    } catch (error) {
-      console.error('Error updating allocation:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.post('/update-allocation', { allocation: newAllocation }));
   }
 };
 
 // User energy data endpoints
 export const energyDataAPI = {
   submitEnergyData: async (energyData) => {
-    try {
-      const response = await apiClient.post('/energy-data', energyData);
-      return response.data;
-    } catch (error) {
-      console.error('Error submitting energy data:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.post('/energy-data', energyData));
   },
   
   calculateSolarPlan: async (userData) => {
-    try {
-      const response = await apiClient.post('/calculate-solar-plan', userData);
-      return response.data;
-    } catch (error) {
-      console.error('Error calculating solar plan:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.post('/calculate-solar-plan', userData));
   }
 };
 
 // Provider matching endpoints
 export const providerAPI = {
   getProviders: async () => {
-    try {
-      const response = await apiClient.get('/providers');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching providers:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.get('/providers'));
   },
   
   selectProvider: async (providerId) => {
-    try {
-      const response = await apiClient.post('/select-provider', { providerId });
-      return response.data;
-    } catch (error) {
-      console.error('Error selecting provider:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.post('/select-provider', { providerId }));
   },
   
   voteForProvider: async (providerId) => {
-    try {
-      const response = await apiClient.post('/vote-provider', { providerId });
-      return response.data;
-    } catch (error) {
-      console.error('Error voting for provider:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.post('/vote-provider', { providerId }));
   },
   
   getMajorityVotedProvider: async () => {
-    try {
-      const response = await apiClient.get('/majority-voted-provider');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching majority voted provider:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.get('/majority-voted-provider'));
   }
 };
 
 // Payment endpoints
 export const paymentAPI = {
   processPayment: async (paymentDetails) => {
-    try {
-      const response = await apiClient.post('/process-payment', paymentDetails);
-      return response.data;
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.post('/process-payment', paymentDetails));
   },
   
   getPaymentStatus: async (paymentId) => {
-    try {
-      const response = await apiClient.get(`/payment-status/${paymentId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching payment status:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.get(`/payment-status/${paymentId}`));
   }
 };
 
 // Monitoring endpoints
 export const monitoringAPI = {
   getEnergyProduction: async (dateRange) => {
-    try {
-      const response = await apiClient.get('/energy-production', { params: dateRange });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching energy production data:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.get('/energy-production', { params: dateRange }));
   },
   
   getSavingsSummary: async () => {
-    try {
-      const response = await apiClient.get('/savings-summary');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching savings summary:', error);
-      throw error;
-    }
+    return safeApiCall(() => apiClient.get('/savings-summary'));
   }
 };
