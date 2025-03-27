@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,9 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Users, DollarSign, LockKeyhole, CheckCircle2, ArrowRight } from 'lucide-react';
+import { CreditCard, Users, DollarSign, LockKeyhole, CheckCircle2, ArrowRight, Percent } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ExportDistributionReportButton from '@/components/reports/DistributionReport';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { communityAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 // Define the member type
 type Member = {
@@ -22,8 +26,11 @@ type Member = {
 };
 
 const Payment = () => {
-  // Sample data for community members
-  const communityMembers: Member[] = [
+  const { toast } = useToast();
+  const [userAllocation, setUserAllocation] = useState<number>(8.75);
+  const [newAllocation, setNewAllocation] = useState<number>(8.75);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [communityMembers, setCommunityMembers] = useState<Member[]>([
     { 
       name: "Sarah Johnson", 
       allocation: 12.5, 
@@ -64,7 +71,82 @@ const Payment = () => {
       monthlyContribution: "₹1,200",
       status: "Pending"
     }
-  ];
+  ]);
+
+  // Recalculate system share, costs, and contributions based on new allocation
+  const calculateMemberDetails = (allocation: number) => {
+    const totalSystemSize = 48; // kW
+    const totalProjectCost = 3000000; // ₹
+    const monthlyMaintenanceFund = 15000; // ₹
+
+    // Calculate system share based on allocation percentage
+    const systemShare = (allocation / 100 * totalSystemSize).toFixed(1);
+    
+    // Calculate initial cost based on allocation percentage
+    const initialCost = Math.round(allocation / 100 * totalProjectCost);
+    const formattedInitialCost = `₹${(initialCost).toLocaleString('en-IN')}`;
+    
+    // Calculate monthly contribution based on allocation percentage
+    const monthlyContribution = Math.round(allocation / 100 * monthlyMaintenanceFund);
+    const formattedMonthlyContribution = `₹${monthlyContribution.toLocaleString('en-IN')}`;
+
+    return {
+      systemShare: `${systemShare} kW`,
+      initialCost: formattedInitialCost,
+      monthlyContribution: formattedMonthlyContribution
+    };
+  };
+
+  // Handle allocation update
+  const handleAllocationUpdate = async () => {
+    setIsUpdating(true);
+    try {
+      // Update the allocation to the backend
+      await communityAPI.updateAllocation(newAllocation);
+      
+      // Update local state with new allocation
+      setUserAllocation(newAllocation);
+      
+      // Update the user's entry in the community members array
+      const updatedMembers = communityMembers.map(member => {
+        if (member.name === "You") {
+          const details = calculateMemberDetails(newAllocation);
+          return {
+            ...member,
+            allocation: newAllocation,
+            systemShare: details.systemShare,
+            initialCost: details.initialCost,
+            monthlyContribution: details.monthlyContribution
+          };
+        }
+        return member;
+      });
+      
+      setCommunityMembers(updatedMembers);
+      
+      toast({
+        title: "Allocation Updated",
+        description: `Your allocation has been updated to ${newAllocation}%`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error updating allocation:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update your allocation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Reset new allocation to current allocation when dialog opens
+  const handleDialogOpen = (open: boolean) => {
+    if (open) {
+      setNewAllocation(userAllocation);
+    }
+  };
   
   return (
     <div className="min-h-screen">
@@ -286,9 +368,68 @@ const Payment = () => {
                     </div>
                     <div className="flex justify-between w-full">
                       <ExportDistributionReportButton members={communityMembers} />
-                      <Button className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                        Adjust Your Allocation
-                      </Button>
+                      <Dialog onOpenChange={handleDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
+                            <Percent className="h-4 w-4 mr-2" />
+                            Adjust Your Allocation
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Adjust Your Allocation</DialogTitle>
+                            <DialogDescription>
+                              Change your share of the community solar project. Adjusting your allocation will affect your costs and energy benefits.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <Label htmlFor="allocation">Your Allocation (%)</Label>
+                                <span className="text-lg font-medium">{newAllocation}%</span>
+                              </div>
+                              <Slider
+                                id="allocation"
+                                min={5}
+                                max={20}
+                                step={0.25}
+                                value={[newAllocation]}
+                                onValueChange={(value) => setNewAllocation(value[0])}
+                              />
+                              <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                                <span>Minimum: 5%</span>
+                                <span>Maximum: 20%</span>
+                              </div>
+                            </div>
+                            <div className="space-y-1 mt-2">
+                              <h4 className="font-semibold text-sm">Updated Costs:</h4>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="text-muted-foreground">System Share:</div>
+                                <div className="font-medium text-right">{calculateMemberDetails(newAllocation).systemShare}</div>
+                                <div className="text-muted-foreground">Initial Cost:</div>
+                                <div className="font-medium text-right">{calculateMemberDetails(newAllocation).initialCost}</div>
+                                <div className="text-muted-foreground">Monthly Contribution:</div>
+                                <div className="font-medium text-right">{calculateMemberDetails(newAllocation).monthlyContribution}</div>
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setNewAllocation(userAllocation)}
+                            >
+                              Reset
+                            </Button>
+                            <Button 
+                              onClick={handleAllocationUpdate}
+                              disabled={isUpdating || newAllocation === userAllocation}
+                              className="button-animation"
+                            >
+                              {isUpdating ? 'Updating...' : 'Update Allocation'}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </CardFooter>
                 </Card>

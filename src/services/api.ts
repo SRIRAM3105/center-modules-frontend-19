@@ -36,6 +36,16 @@ export const communityAPI = {
       console.error('Error fetching community details:', error);
       throw error;
     }
+  },
+  
+  updateAllocation: async (newAllocation) => {
+    try {
+      const response = await apiClient.post('/update-allocation', { allocation: newAllocation });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating allocation:', error);
+      throw error;
+    }
   }
 };
 
