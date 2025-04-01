@@ -26,6 +26,39 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Authentication endpoints
+export const authAPI = {
+  login: async (credentials) => {
+    try {
+      const response = await apiClient.post('/auth/login', credentials);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Error during login:', error);
+      throw error;
+    }
+  },
+  
+  signup: async (userData) => {
+    try {
+      const response = await apiClient.post('/auth/signup', userData);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Error during signup:', error);
+      throw error;
+    }
+  },
+  
+  logout: () => {
+    localStorage.removeItem('token');
+  }
+};
+
 // Community data endpoints
 export const communityAPI = {
   getCommunityDetails: async () => {
@@ -44,6 +77,28 @@ export const communityAPI = {
       return response.data;
     } catch (error) {
       console.error('Error updating allocation:', error);
+      throw error;
+    }
+  },
+  
+  browseCommunities: async (location) => {
+    try {
+      const response = await apiClient.get('/communities', { 
+        params: { location } 
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error browsing communities:', error);
+      throw error;
+    }
+  },
+  
+  createCommunity: async (communityData) => {
+    try {
+      const response = await apiClient.post('/communities/create', communityData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating community:', error);
       throw error;
     }
   }

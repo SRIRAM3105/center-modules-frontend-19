@@ -6,11 +6,173 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserPlus, User, Mail, Lock, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { UserPlus, User, Mail, Lock, Users, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { authAPI, communityAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
+
+// Define schemas for form validation
+const signupSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"]
+});
+
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email" }),
+  password: z.string().min(1, { message: "Please enter your password" })
+});
+
+const browseCommunitySchema = z.object({
+  location: z.string().min(1, { message: "Please enter a location" })
+});
+
+const createCommunitySchema = z.object({
+  name: z.string().min(2, { message: "Community name must be at least 2 characters" })
+});
 
 const Registration = () => {
   const [activeTab, setActiveTab] = useState('signup');
+  const [isLoading, setIsLoading] = useState({
+    signup: false,
+    login: false,
+    browse: false,
+    create: false
+  });
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Form setup
+  const signupForm = useForm<z.infer<typeof signupSchema>>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: ""
+    }
+  });
+
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: ""
+    }
+  });
+
+  const browseCommunityForm = useForm<z.infer<typeof browseCommunitySchema>>({
+    resolver: zodResolver(browseCommunitySchema),
+    defaultValues: {
+      location: ""
+    }
+  });
+
+  const createCommunityForm = useForm<z.infer<typeof createCommunitySchema>>({
+    resolver: zodResolver(createCommunitySchema),
+    defaultValues: {
+      name: ""
+    }
+  });
+
+  // Form submission handlers
+  const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
+    setIsLoading(prev => ({ ...prev, signup: true }));
+    try {
+      const { confirmPassword, ...signupData } = data;
+      await authAPI.signup(signupData);
+      toast({
+        title: "Account created!",
+        description: "Your account has been successfully created.",
+        variant: "default",
+      });
+      navigate('/data-collection');
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup failed",
+        description: "There was an error creating your account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, signup: false }));
+    }
+  };
+
+  const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
+    setIsLoading(prev => ({ ...prev, login: true }));
+    try {
+      await authAPI.login(data);
+      toast({
+        title: "Login successful!",
+        description: "You have been logged in successfully.",
+        variant: "default",
+      });
+      navigate('/data-collection');
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, login: false }));
+    }
+  };
+
+  const onBrowseCommunitySubmit = async (data: z.infer<typeof browseCommunitySchema>) => {
+    setIsLoading(prev => ({ ...prev, browse: true }));
+    try {
+      const communities = await communityAPI.browseCommunities(data.location);
+      toast({
+        title: "Communities found!",
+        description: `${communities.length} communities found in your area.`,
+        variant: "default",
+      });
+      // Here you could update state to show the results or navigate to a results page
+    } catch (error) {
+      console.error("Browse communities error:", error);
+      toast({
+        title: "Search failed",
+        description: "Could not load communities. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, browse: false }));
+    }
+  };
+
+  const onCreateCommunitySubmit = async (data: z.infer<typeof createCommunitySchema>) => {
+    setIsLoading(prev => ({ ...prev, create: true }));
+    try {
+      await communityAPI.createCommunity(data);
+      toast({
+        title: "Community created!",
+        description: "Your community has been successfully created.",
+        variant: "default",
+      });
+      // Here you could navigate to the new community page
+    } catch (error) {
+      console.error("Create community error:", error);
+      toast({
+        title: "Creation failed",
+        description: "There was an error creating your community. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, create: false }));
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -65,43 +227,103 @@ const Registration = () => {
                       Enter your information to get started with your solar journey.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <div className="relative">
-                        <Input id="name" placeholder="John Doe" className="pl-10" />
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Input id="email" type="email" placeholder="john@example.com" className="pl-10" />
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Input id="password" type="password" className="pl-10" />
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <div className="relative">
-                        <Input id="confirm-password" type="password" className="pl-10" />
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Link to="/data-collection" className="w-full">
-                      <Button className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                        Create Account
-                      </Button>
-                    </Link>
-                  </CardFooter>
+                  <Form {...signupForm}>
+                    <form onSubmit={signupForm.handleSubmit(onSignupSubmit)}>
+                      <CardContent className="space-y-4">
+                        <FormField
+                          control={signupForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Full Name</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="John Doe" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={signupForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Email</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="john@example.com" 
+                                    type="email" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={signupForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Password</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={signupForm.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Confirm Password</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          type="submit" 
+                          className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                          disabled={isLoading.signup}
+                        >
+                          {isLoading.signup && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Create Account
+                        </Button>
+                      </CardFooter>
+                    </form>
+                  </Form>
                 </Card>
               </TabsContent>
               <TabsContent value="login">
@@ -112,34 +334,68 @@ const Registration = () => {
                       Login to your account to continue your solar journey.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <div className="relative">
-                        <Input id="login-email" type="email" placeholder="john@example.com" className="pl-10" />
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="login-password">Password</Label>
-                        <a href="#" className="text-sm text-primary hover:underline">
-                          Forgot password?
-                        </a>
-                      </div>
-                      <div className="relative">
-                        <Input id="login-password" type="password" className="pl-10" />
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Link to="/data-collection" className="w-full">
-                      <Button className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                        Login
-                      </Button>
-                    </Link>
-                  </CardFooter>
+                  <Form {...loginForm}>
+                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+                      <CardContent className="space-y-4">
+                        <FormField
+                          control={loginForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Email</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="john@example.com" 
+                                    type="email" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={loginForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <FormLabel>Password</FormLabel>
+                                <a href="#" className="text-sm text-primary hover:underline">
+                                  Forgot password?
+                                </a>
+                              </div>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          type="submit" 
+                          className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                          disabled={isLoading.login}
+                        >
+                          {isLoading.login && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Login
+                        </Button>
+                      </CardFooter>
+                    </form>
+                  </Form>
                 </Card>
               </TabsContent>
             </Tabs>
@@ -163,26 +419,48 @@ const Registration = () => {
                 Find and join solar communities in your area that are already established.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="aspect-video relative rounded-lg overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80" 
-                  alt="Community meeting" 
-                  className="object-cover w-full h-full"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                <div className="absolute bottom-4 left-4 text-white font-medium">20+ Communities Available</div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="search-community">Search by Location</Label>
-                <Input id="search-community" placeholder="Enter your city or ZIP code" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full button-animation">
-                Browse Communities
-              </Button>
-            </CardFooter>
+            <Form {...browseCommunityForm}>
+              <form onSubmit={browseCommunityForm.handleSubmit(onBrowseCommunitySubmit)}>
+                <CardContent className="space-y-4">
+                  <div className="aspect-video relative rounded-lg overflow-hidden">
+                    <img 
+                      src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80" 
+                      alt="Community meeting" 
+                      className="object-cover w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                    <div className="absolute bottom-4 left-4 text-white font-medium">20+ Communities Available</div>
+                  </div>
+                  <FormField
+                    control={browseCommunityForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>Search by Location</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter your city or ZIP code"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    type="submit"
+                    variant="outline" 
+                    className="w-full button-animation"
+                    disabled={isLoading.browse}
+                  >
+                    {isLoading.browse && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Browse Communities
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
           </Card>
 
           <Card className="shadow-soft animate-scale-in [animation-delay:200ms]">
@@ -192,26 +470,47 @@ const Registration = () => {
                 Start your own solar community and invite neighbors to join your initiative.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="aspect-video relative rounded-lg overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=2940&q=80" 
-                  alt="People starting a community" 
-                  className="object-cover w-full h-full"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                <div className="absolute bottom-4 left-4 text-white font-medium">Create in Minutes</div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="community-name">Community Name</Label>
-                <Input id="community-name" placeholder="Enter a name for your community" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                Create Community
-              </Button>
-            </CardFooter>
+            <Form {...createCommunityForm}>
+              <form onSubmit={createCommunityForm.handleSubmit(onCreateCommunitySubmit)}>
+                <CardContent className="space-y-4">
+                  <div className="aspect-video relative rounded-lg overflow-hidden">
+                    <img 
+                      src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=2940&q=80" 
+                      alt="People starting a community" 
+                      className="object-cover w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                    <div className="absolute bottom-4 left-4 text-white font-medium">Create in Minutes</div>
+                  </div>
+                  <FormField
+                    control={createCommunityForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>Community Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter a name for your community"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    type="submit"
+                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                    disabled={isLoading.create}
+                  >
+                    {isLoading.create && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Community
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
           </Card>
         </div>
       </Section>
