@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 const ProviderMatching = () => {
   const { toast } = useToast();
@@ -46,7 +47,7 @@ const ProviderMatching = () => {
       reviews: 156,
       certified: true,
       yearsExperience: 15,
-      image: "https://images.unsplash.com/photo-1611365892117-bdf9aede0cd5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2062&q=80"
+      image: "https://images.unsplash.com/photo-1611265017502-4de827c3a870?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
     }
   ];
 
@@ -115,11 +116,14 @@ const ProviderMatching = () => {
                 {providers.map((provider, index) => (
                   <Card key={index} className="shadow-soft overflow-hidden animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
                     <div className="relative h-48 overflow-hidden">
-                      <img 
-                        src={provider.image} 
-                        alt={provider.name} 
-                        className="w-full h-full object-cover" 
-                      />
+                      <AspectRatio ratio={16/9}>
+                        <img 
+                          src={provider.image} 
+                          alt={provider.name} 
+                          className="w-full h-full object-cover" 
+                          loading="lazy"
+                        />
+                      </AspectRatio>
                       {provider.certified && (
                         <div className="absolute top-3 right-3">
                           <Badge className="bg-primary text-white">
