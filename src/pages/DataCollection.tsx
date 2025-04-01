@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { BarChart2, Home, Sun, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { energyDataAPI } from '@/services/api';
+import { dataCollectionAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
 const DataCollection = () => {
@@ -47,8 +47,8 @@ const DataCollection = () => {
         address
       };
 
-      // Submit to backend
-      const result = await energyDataAPI.calculateSolarPlan(energyData);
+      // Submit to backend - using the correct API function
+      const result = await dataCollectionAPI.calculateSolarPlan(energyData);
       
       // Store result in localStorage for access in provider matching page
       localStorage.setItem('solarPlanData', JSON.stringify(result));

@@ -123,6 +123,15 @@ export const communityAPI = {
     } catch (error) {
       return handleApiError(error, 'joining community');
     }
+  },
+  
+  updateAllocation: async (allocation) => {
+    try {
+      const response = await apiClient.post('/update-allocation', { allocation });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'updating allocation');
+    }
   }
 };
 
@@ -156,6 +165,15 @@ export const dataCollectionAPI = {
       return response.data;
     } catch (error) {
       return handleApiError(error, 'submitting community demand');
+    }
+  },
+  
+  calculateSolarPlan: async (energyData) => {
+    try {
+      const response = await apiClient.post('/calculate-solar-plan', energyData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'calculating solar plan');
     }
   }
 };
