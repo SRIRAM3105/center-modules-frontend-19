@@ -26,70 +26,84 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Authentication endpoints
+// Error handling helper
+const handleApiError = (error, context) => {
+  console.error(`Error during ${context}:`, error);
+  throw error;
+};
+
+// ==========================================
+// REGISTRATION API ENDPOINTS
+// ==========================================
 export const authAPI = {
-  login: async (credentials) => {
+  signup: async (userData) => {
     try {
-      const response = await apiClient.post('/auth/login', credentials);
+      const response = await apiClient.post('/signup', userData);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
       return response.data;
     } catch (error) {
-      console.error('Error during login:', error);
-      throw error;
+      return handleApiError(error, 'signup');
     }
   },
   
-  signup: async (userData) => {
+  login: async (credentials) => {
     try {
-      const response = await apiClient.post('/auth/signup', userData);
+      const response = await apiClient.post('/login', credentials);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
       return response.data;
     } catch (error) {
-      console.error('Error during signup:', error);
-      throw error;
+      return handleApiError(error, 'login');
     }
   },
   
   logout: () => {
     localStorage.removeItem('token');
-  }
-};
-
-// Community data endpoints
-export const communityAPI = {
-  getCommunityDetails: async () => {
+  },
+  
+  getProfile: async () => {
     try {
-      const response = await apiClient.get('/community-details');
+      const response = await apiClient.get('/profile');
       return response.data;
     } catch (error) {
-      console.error('Error fetching community details:', error);
-      throw error;
+      return handleApiError(error, 'fetching profile');
     }
   },
   
-  updateAllocation: async (newAllocation) => {
+  updateProfile: async (userData) => {
     try {
-      const response = await apiClient.post('/update-allocation', { allocation: newAllocation });
+      const response = await apiClient.put('/profile', userData);
       return response.data;
     } catch (error) {
-      console.error('Error updating allocation:', error);
-      throw error;
+      return handleApiError(error, 'updating profile');
+    }
+  }
+};
+
+// ==========================================
+// COMMUNITY API ENDPOINTS
+// ==========================================
+export const communityAPI = {
+  getCommunityDetails: async (communityId) => {
+    try {
+      const response = await apiClient.get(`/communities/${communityId}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching community details');
     }
   },
   
   browseCommunities: async (location) => {
     try {
-      const response = await apiClient.get('/communities', { 
-        params: { location } 
+      const response = await apiClient.get('/communities/browse', {
+        params: { location }
       });
       return response.data;
     } catch (error) {
-      console.error('Error browsing communities:', error);
-      throw error;
+      return handleApiError(error, 'browsing communities');
     }
   },
   
@@ -98,100 +112,254 @@ export const communityAPI = {
       const response = await apiClient.post('/communities/create', communityData);
       return response.data;
     } catch (error) {
-      console.error('Error creating community:', error);
-      throw error;
-    }
-  }
-};
-
-// User energy data endpoints
-export const energyDataAPI = {
-  submitEnergyData: async (energyData) => {
-    try {
-      const response = await apiClient.post('/energy-data', energyData);
-      return response.data;
-    } catch (error) {
-      console.error('Error submitting energy data:', error);
-      throw error;
+      return handleApiError(error, 'creating community');
     }
   },
   
-  calculateSolarPlan: async (userData) => {
+  joinCommunity: async (communityId) => {
     try {
-      const response = await apiClient.post('/calculate-solar-plan', userData);
+      const response = await apiClient.post('/join-community', { communityId });
       return response.data;
     } catch (error) {
-      console.error('Error calculating solar plan:', error);
-      throw error;
+      return handleApiError(error, 'joining community');
     }
   }
 };
 
-// Provider matching endpoints
+// ==========================================
+// DATA COLLECTION API ENDPOINTS
+// ==========================================
+export const dataCollectionAPI = {
+  submitAddress: async (addressData) => {
+    try {
+      const response = await apiClient.post('/address', addressData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting address');
+    }
+  },
+  
+  getSolarPotential: async (location) => {
+    try {
+      const response = await apiClient.get('/solar-potential', {
+        params: { location }
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching solar potential');
+    }
+  },
+  
+  submitCommunityDemand: async (demandData) => {
+    try {
+      const response = await apiClient.post('/community-demand', demandData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting community demand');
+    }
+  }
+};
+
+// ==========================================
+// PLAN GENERATION API ENDPOINTS
+// ==========================================
+export const planAPI = {
+  generateSolarPlan: async (planData) => {
+    try {
+      const response = await apiClient.post('/solar-plan', planData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'generating solar plan');
+    }
+  },
+  
+  getRoofEstimates: async (buildingData) => {
+    try {
+      const response = await apiClient.post('/roof-estimate', buildingData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'getting roof estimates');
+    }
+  },
+  
+  submitHouseInfo: async (houseData) => {
+    try {
+      const response = await apiClient.post('/houseinfo', houseData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting house info');
+    }
+  },
+  
+  updateSettings: async (settings) => {
+    try {
+      const response = await apiClient.post('/settings', settings);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'updating settings');
+    }
+  }
+};
+
+// ==========================================
+// PROVIDER CONNECTION API ENDPOINTS
+// ==========================================
 export const providerAPI = {
   getProviders: async () => {
     try {
       const response = await apiClient.get('/providers');
       return response.data;
     } catch (error) {
-      console.error('Error fetching providers:', error);
-      throw error;
+      return handleApiError(error, 'fetching providers');
     }
   },
   
-  selectProvider: async (providerId) => {
+  requestQuote: async (providerId) => {
     try {
-      const response = await apiClient.post('/select-provider', { providerId });
+      const response = await apiClient.post('/quote', { providerId });
       return response.data;
     } catch (error) {
-      console.error('Error selecting provider:', error);
-      throw error;
+      return handleApiError(error, 'requesting quote');
+    }
+  },
+  
+  submitVote: async (providerVote) => {
+    try {
+      const response = await apiClient.post('/vote', providerVote);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting vote');
+    }
+  },
+  
+  getVotingResults: async (communityId) => {
+    try {
+      const response = await apiClient.get('/vote-results', {
+        params: { communityId }
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching voting results');
     }
   }
 };
 
-// Payment endpoints
-export const paymentAPI = {
-  processPayment: async (paymentDetails) => {
+// ==========================================
+// COST SHARING API ENDPOINTS
+// ==========================================
+export const costAPI = {
+  updateCostShare: async (costShareData) => {
     try {
-      const response = await apiClient.post('/process-payment', paymentDetails);
+      const response = await apiClient.post('/cost-share', costShareData);
       return response.data;
     } catch (error) {
-      console.error('Error processing payment:', error);
-      throw error;
+      return handleApiError(error, 'updating cost sharing');
     }
   },
   
-  getPaymentStatus: async (paymentId) => {
+  getPayments: async () => {
     try {
-      const response = await apiClient.get(`/payment-status/${paymentId}`);
+      const response = await apiClient.get('/payments');
       return response.data;
     } catch (error) {
-      console.error('Error fetching payment status:', error);
-      throw error;
+      return handleApiError(error, 'fetching payments');
+    }
+  },
+  
+  makePayment: async (paymentData) => {
+    try {
+      const response = await apiClient.post('/pay', paymentData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'processing payment');
+    }
+  },
+  
+  getInvoices: async () => {
+    try {
+      const response = await apiClient.get('/invoices');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching invoices');
     }
   }
 };
 
-// Monitoring endpoints
+// ==========================================
+// INSTALLATION TRACKING API ENDPOINTS
+// ==========================================
+export const installationAPI = {
+  getInstallationStatus: async (installationId) => {
+    try {
+      const response = await apiClient.get('/installation-status', {
+        params: { installationId }
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching installation status');
+    }
+  },
+  
+  getMilestones: async (installationId) => {
+    try {
+      const response = await apiClient.get('/milestones', {
+        params: { installationId }
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching milestones');
+    }
+  },
+  
+  submitFeedback: async (feedbackData) => {
+    try {
+      const response = await apiClient.post('/feedback', feedbackData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting feedback');
+    }
+  }
+};
+
+// ==========================================
+// MONITORING API ENDPOINTS
+// ==========================================
 export const monitoringAPI = {
-  getEnergyProduction: async (dateRange) => {
+  getSavingsAnalysis: async (communityId) => {
     try {
-      const response = await apiClient.get('/energy-production', { params: dateRange });
+      const response = await apiClient.post('/savings-analysis', { communityId });
       return response.data;
     } catch (error) {
-      console.error('Error fetching energy production data:', error);
-      throw error;
+      return handleApiError(error, 'fetching savings analysis');
     }
   },
   
-  getSavingsSummary: async () => {
+  getCarbonReport: async (communityId) => {
     try {
-      const response = await apiClient.get('/savings-summary');
+      const response = await apiClient.get('/carbon-report', {
+        params: { communityId }
+      });
       return response.data;
     } catch (error) {
-      console.error('Error fetching savings summary:', error);
-      throw error;
+      return handleApiError(error, 'fetching carbon report');
+    }
+  },
+  
+  getAlerts: async () => {
+    try {
+      const response = await apiClient.get('/alerts');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching alerts');
+    }
+  },
+  
+  getEnergyData: async (userId) => {
+    try {
+      const response = await apiClient.post('/energy-data', { userId });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching energy data');
     }
   }
 };
