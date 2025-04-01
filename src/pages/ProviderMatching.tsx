@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -116,14 +115,12 @@ const ProviderMatching = () => {
                 {providers.map((provider, index) => (
                   <Card key={index} className="shadow-soft overflow-hidden animate-scale-in" style={{ animationDelay: `${index * 100}ms` }}>
                     <div className="relative h-48 overflow-hidden">
-                      <AspectRatio ratio={16/9}>
-                        <img 
-                          src={provider.image} 
-                          alt={provider.name} 
-                          className="w-full h-full object-cover" 
-                          loading="lazy"
-                        />
-                      </AspectRatio>
+                      <img 
+                        src={provider.image} 
+                        alt={provider.name} 
+                        className="w-full h-full object-cover" 
+                        loading="lazy"
+                      />
                       {provider.certified && (
                         <div className="absolute top-3 right-3">
                           <Badge className="bg-primary text-white">

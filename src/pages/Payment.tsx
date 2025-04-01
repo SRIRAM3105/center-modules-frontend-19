@@ -7,12 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CreditCard, Users, DollarSign, LockKeyhole, CheckCircle2, ArrowRight, Percent } from 'lucide-react';
+import { CreditCard, Users, DollarSign, LockKeyhole, CheckCircle2, ArrowRight, Percent, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ExportDistributionReportButton from '@/components/reports/DistributionReport';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { communityAPI } from '@/services/api';
+import { communityAPI, costAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
 // Define the member type
@@ -25,11 +25,29 @@ type Member = {
   status: string;
 };
 
+// Define payment form data type
+type PaymentFormData = {
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  nameOnCard: string;
+  paymentType: 'full' | 'installments';
+};
+
 const Payment = () => {
   const { toast } = useToast();
   const [userAllocation, setUserAllocation] = useState<number>(8.75);
   const [newAllocation, setNewAllocation] = useState<number>(8.75);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentFormData, setPaymentFormData] = useState<PaymentFormData>({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    nameOnCard: '',
+    paymentType: 'full',
+  });
   const [communityMembers, setCommunityMembers] = useState<Member[]>([
     { 
       name: "Sarah Johnson", 
@@ -148,6 +166,99 @@ const Payment = () => {
     }
   };
   
+  // Handle payment form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setPaymentFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+
+  // Handle radio group change
+  const handlePaymentTypeChange = (value: 'full' | 'installments') => {
+    setPaymentFormData(prev => ({
+      ...prev,
+      paymentType: value
+    }));
+  };
+
+  // Process payment
+  const processPayment = async () => {
+    // Validate form
+    if (!paymentFormData.cardNumber || !paymentFormData.expiryDate || 
+        !paymentFormData.cvv || !paymentFormData.nameOnCard) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all payment details",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsProcessingPayment(true);
+    
+    try {
+      // Prepare payment data
+      const paymentData = {
+        amount: paymentFormData.paymentType === 'full' ? 262500 : 22917,
+        paymentMethod: 'card',
+        cardDetails: {
+          // In a real app, this would be handled securely through a payment processor
+          // Never send raw card details to your backend
+          nameOnCard: paymentFormData.nameOnCard,
+          type: 'credit',
+        },
+        installmentPlan: paymentFormData.paymentType === 'installments' ? 12 : null,
+      };
+      
+      // Call the payment API
+      await costAPI.makePayment(paymentData);
+      
+      // Update the user's status in community members
+      const updatedMembers = communityMembers.map(member => {
+        if (member.name === "You") {
+          return {
+            ...member,
+            status: "Paid"
+          };
+        }
+        return member;
+      });
+      
+      setCommunityMembers(updatedMembers);
+      setPaymentSuccess(true);
+      
+      toast({
+        title: "Payment Successful",
+        description: `Your payment has been processed successfully!`,
+        variant: "default",
+      });
+      
+      // Reset form after successful payment
+      setTimeout(() => {
+        setPaymentSuccess(false);
+        setPaymentFormData({
+          cardNumber: '',
+          expiryDate: '',
+          cvv: '',
+          nameOnCard: '',
+          paymentType: 'full',
+        });
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      toast({
+        title: "Payment Failed",
+        description: "There was an issue processing your payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen">
       <Section className="pt-32 pb-24">
@@ -183,50 +294,105 @@ const Payment = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="card-number">Card Number</Label>
-                      <div className="relative">
-                        <Input id="card-number" placeholder="1234 5678 9012 3456" className="pl-10" />
-                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiry-date">Expiry Date</Label>
-                        <Input id="expiry-date" placeholder="MM/YY" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">CVV</Label>
-                        <div className="relative">
-                          <Input id="cvv" placeholder="123" className="pl-10" />
-                          <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    {paymentSuccess ? (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <div className="rounded-full bg-green-100 p-3 mb-4">
+                          <CheckCircle2 className="h-8 w-8 text-green-600" />
                         </div>
+                        <h3 className="text-xl font-medium">Payment Successful!</h3>
+                        <p className="text-muted-foreground mt-2 text-center">
+                          Your payment has been processed. You'll receive a confirmation email shortly.
+                        </p>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="name-on-card">Name on Card</Label>
-                      <Input id="name-on-card" placeholder="John Doe" />
-                    </div>
-                    <RadioGroup defaultValue="full" className="space-y-3">
-                      <div className="flex items-center space-x-2 space-y-0 rounded-md border p-3">
-                        <RadioGroupItem value="full" id="full-payment" />
-                        <Label htmlFor="full-payment" className="flex-1 font-medium">
-                          Full Payment
-                          <p className="text-sm font-normal text-muted-foreground">Pay the entire amount: ₹2,62,500</p>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 space-y-0 rounded-md border p-3">
-                        <RadioGroupItem value="installments" id="installments" />
-                        <Label htmlFor="installments" className="flex-1 font-medium">
-                          Monthly Installments
-                          <p className="text-sm font-normal text-muted-foreground">12 payments of ₹22,917/month</p>
-                        </Label>
-                      </div>
-                    </RadioGroup>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="cardNumber">Card Number</Label>
+                          <div className="relative">
+                            <Input 
+                              id="cardNumber" 
+                              placeholder="1234 5678 9012 3456" 
+                              className="pl-10" 
+                              value={paymentFormData.cardNumber}
+                              onChange={handleInputChange}
+                              maxLength={19}
+                            />
+                            <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="expiryDate">Expiry Date</Label>
+                            <Input 
+                              id="expiryDate" 
+                              placeholder="MM/YY" 
+                              value={paymentFormData.expiryDate}
+                              onChange={handleInputChange}
+                              maxLength={5}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cvv">CVV</Label>
+                            <div className="relative">
+                              <Input 
+                                id="cvv" 
+                                placeholder="123" 
+                                className="pl-10" 
+                                value={paymentFormData.cvv}
+                                onChange={handleInputChange}
+                                maxLength={3}
+                                type="password"
+                              />
+                              <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="nameOnCard">Name on Card</Label>
+                          <Input 
+                            id="nameOnCard" 
+                            placeholder="John Doe" 
+                            value={paymentFormData.nameOnCard}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <RadioGroup 
+                          defaultValue="full" 
+                          className="space-y-3"
+                          value={paymentFormData.paymentType}
+                          onValueChange={handlePaymentTypeChange as (value: string) => void}
+                        >
+                          <div className="flex items-center space-x-2 space-y-0 rounded-md border p-3">
+                            <RadioGroupItem value="full" id="full-payment" />
+                            <Label htmlFor="full-payment" className="flex-1 font-medium">
+                              Full Payment
+                              <p className="text-sm font-normal text-muted-foreground">Pay the entire amount: ₹2,62,500</p>
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2 space-y-0 rounded-md border p-3">
+                            <RadioGroupItem value="installments" id="installments" />
+                            <Label htmlFor="installments" className="flex-1 font-medium">
+                              Monthly Installments
+                              <p className="text-sm font-normal text-muted-foreground">12 payments of ₹22,917/month</p>
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                      </>
+                    )}
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                      Pay Securely
+                    <Button 
+                      className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                      onClick={processPayment}
+                      disabled={isProcessingPayment || paymentSuccess}
+                    >
+                      {isProcessingPayment ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...
+                        </>
+                      ) : (
+                        'Pay Securely'
+                      )}
                     </Button>
                   </CardFooter>
                 </Card>
