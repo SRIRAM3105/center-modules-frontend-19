@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -162,19 +161,23 @@ const ProjectPresentation = () => {
             <div className="bg-solar-50/50 p-3 rounded-lg">
               <h4 className="font-bold mb-1">Technical Metrics</h4>
               <ul className="list-disc pl-5 space-y-1">
-                <li>System response time (&lt; 1.5s)</li>
-                <li>User retention rate (target: 85%)</li>
-                <li>Community formation success rate</li>
-                <li>Provider match quality score</li>
+                <li><span className="font-semibold">System Response Time:</span> 95% of requests complete in &lt;1.5s</li>
+                <li><span className="font-semibold">User Retention Rate:</span> Target 85% retention over 12 months</li>
+                <li><span className="font-semibold">Community Formation:</span> 70% of registered users join communities</li>
+                <li><span className="font-semibold">Provider Quality:</span> 90% match satisfaction based on post-installation surveys</li>
+                <li><span className="font-semibold">System Uptime:</span> 99.9% availability with scheduled maintenance windows</li>
+                <li><span className="font-semibold">Error Rate:</span> &lt;0.5% transaction failure rate across all modules</li>
               </ul>
             </div>
             <div className="bg-eco-50/50 p-3 rounded-lg">
               <h4 className="font-bold mb-1">Impact Metrics</h4>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Total kWh of clean energy produced</li>
-                <li>CO₂ emissions avoided</li>
-                <li>Average cost savings per household</li>
-                <li>Community engagement level</li>
+                <li><span className="font-semibold">Clean Energy Production:</span> Target 25MW total capacity installed within 24 months</li>
+                <li><span className="font-semibold">CO₂ Reduction:</span> Estimated 15K metric tons CO₂ avoided annually</li>
+                <li><span className="font-semibold">Cost Savings:</span> Average 20% reduction in household energy costs</li>
+                <li><span className="font-semibold">Community Engagement:</span> 75% of members participate in at least 1 decision monthly</li>
+                <li><span className="font-semibold">Local Economic Impact:</span> Creation of 150+ jobs in installation and maintenance</li>
+                <li><span className="font-semibold">Education Reach:</span> 50K unique visitors to educational resources annually</li>
               </ul>
             </div>
           </div>
@@ -188,19 +191,37 @@ const ProjectPresentation = () => {
       section: "First Review",
       content: (
         <div>
-          <p className="mb-3">Comprehensive testing strategy includes:</p>
+          <p className="mb-3">Our comprehensive testing strategy includes:</p>
           <div className="space-y-3 text-sm">
             <div className="bg-solar-50/40 p-2 rounded-lg">
               <h4 className="font-bold">Unit Tests</h4>
-              <p>Testing individual components including form validation, calculation algorithms, and data processing functions</p>
+              <ul className="list-disc pl-5 space-y-1 mt-1">
+                <li><span className="font-semibold">Registration Validation:</span> Test email format validation, password strength requirements, and address verification</li>
+                <li><span className="font-semibold">Energy Calculation:</span> Verify correct energy generation estimates based on location, roof orientation, and panel efficiency</li>
+                <li><span className="font-semibold">Cost Distribution:</span> Confirm fair-share algorithm correctly allocates costs based on various usage patterns</li>
+                <li><span className="font-semibold">Provider Rating:</span> Test accuracy of provider matching score calculation with different input parameters</li>
+              </ul>
             </div>
             <div className="bg-eco-50/40 p-2 rounded-lg">
               <h4 className="font-bold">Integration Tests</h4>
-              <p>Testing interactions between modules such as registration to data collection flow, provider matching to payment</p>
+              <ul className="list-disc pl-5 space-y-1 mt-1">
+                <li><span className="font-semibold">Registration → Community Formation:</span> Verify user flow from signup to joining/creating a community</li>
+                <li><span className="font-semibold">Data Collection → Provider Matching:</span> Test seamless transfer of energy requirements to provider selection</li>
+                <li><span className="font-semibold">Provider Selection → Payment Processing:</span> Validate contract generation and payment flow</li>
+                <li><span className="font-semibold">Installation → Monitoring:</span> Confirm system registration and data feed initialization post-installation</li>
+                <li><span className="font-semibold">API Integrations:</span> Test weather data, utility API, and payment gateway connections under various conditions</li>
+              </ul>
             </div>
             <div className="bg-solar-50/40 p-2 rounded-lg">
               <h4 className="font-bold">User Acceptance Tests</h4>
-              <p>Scenarios include community creation, solar system configuration, installer selection, and payment processing</p>
+              <ul className="list-disc pl-5 space-y-1 mt-1">
+                <li><span className="font-semibold">Community Creation Scenario:</span> Users can create communities, invite neighbors, and establish governance rules</li>
+                <li><span className="font-semibold">System Configuration:</span> Communities can compare system options, vote on preferences, and finalize selections</li>
+                <li><span className="font-semibold">Provider Selection:</span> Communities can review bids, interact with providers, and make informed decisions</li>
+                <li><span className="font-semibold">Payment Processing:</span> Members can select payment plans, process payments, and view transaction history</li>
+                <li><span className="font-semibold">Energy Monitoring:</span> Users can view real-time production data, savings metrics, and performance alerts</li>
+                <li><span className="font-semibold">Mobile Responsiveness:</span> All key workflows function correctly on various mobile devices and screen sizes</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -406,7 +427,6 @@ function EnergyMonitoringDashboard({ communityId }) {
     };
   }, []);
 
-  // Group slides by section
   const sections = slides.reduce((acc, slide) => {
     if (!slide.section) return acc;
     if (!acc[slide.section]) acc[slide.section] = [];
@@ -427,7 +447,6 @@ function EnergyMonitoringDashboard({ communityId }) {
         )}
       >
         <div className="p-6 md:p-12 h-full flex flex-col">
-          {/* Header with section indicator */}
           {slides[currentSlide].section && (
             <div className="mb-6 flex items-center">
               <div className="text-sm font-medium text-muted-foreground">
@@ -511,7 +530,6 @@ function EnergyMonitoringDashboard({ communityId }) {
         </div>
       </div>
 
-      {/* Section navigator for larger screens */}
       {Object.keys(sections).length > 0 && (
         <div className="mt-8 hidden md:flex gap-4 flex-wrap justify-center">
           {Object.entries(sections).map(([sectionName, sectionSlides]) => (
