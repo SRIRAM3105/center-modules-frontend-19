@@ -12,6 +12,7 @@ import ProviderMatching from "@/pages/ProviderMatching";
 import Payment from "@/pages/Payment";
 import Monitoring from "@/pages/Monitoring";
 import NotFound from "@/pages/NotFound";
+import Presentation from "@/pages/Presentation";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/provider-matching" element={<ProviderMatching />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/monitoring" element={<Monitoring />} />
+            <Route path="/presentation" element={<Presentation />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

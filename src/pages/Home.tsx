@@ -5,7 +5,7 @@ import { Section } from '@/components/shared/Section';
 import { FeatureCard } from '@/components/shared/FeatureCard';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { UserPlus, BarChart2, Users, Sun, Zap, CreditCard } from 'lucide-react';
+import { UserPlus, BarChart2, Users, Sun, Zap, CreditCard, Presentation } from 'lucide-react';
 
 const Home = () => {
   return (
@@ -135,6 +135,12 @@ const Home = () => {
             <Link to="/data-collection">
               <Button variant="outline" size="lg" className="button-animation">
                 Calculate Your Savings
+              </Button>
+            </Link>
+            <Link to="/presentation">
+              <Button variant="outline" size="lg" className="button-animation flex items-center gap-2">
+                <Presentation className="h-4 w-4" />
+                View Project Presentation
               </Button>
             </Link>
           </div>
