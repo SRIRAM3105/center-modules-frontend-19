@@ -7,21 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, User, Mail, Lock, Users, Loader2 } from 'lucide-react';
+import { UserPlus, User, Mail, Lock, Users, Loader2, Building2, MapPin, CheckCircle, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { authAPI, communityAPI } from '@/services/api';
+import { authAPI, communityAPI, providerAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Define schemas for form validation
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  isProvider: z.boolean().default(false)
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"]
@@ -40,13 +42,27 @@ const createCommunitySchema = z.object({
   name: z.string().min(2, { message: "Community name must be at least 2 characters" })
 });
 
+const providerSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z.string(),
+  contact: z.string().min(10, { message: "Please enter a valid contact number" }),
+  location: z.string().min(2, { message: "Please enter a valid location" }),
+  upi_id: z.string().min(4, { message: "Please enter a valid UPI ID" }),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"]
+});
+
 const Registration = () => {
   const [activeTab, setActiveTab] = useState('signup');
   const [isLoading, setIsLoading] = useState({
     signup: false,
     login: false,
     browse: false,
-    create: false
+    create: false,
+    provider: false
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,7 +74,8 @@ const Registration = () => {
       name: "",
       email: "",
       password: "",
-      confirmPassword: ""
+      confirmPassword: "",
+      isProvider: false
     }
   });
 
@@ -84,11 +101,32 @@ const Registration = () => {
     }
   });
 
+  const providerForm = useForm<z.infer<typeof providerSchema>>({
+    resolver: zodResolver(providerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      contact: "",
+      location: "",
+      upi_id: ""
+    }
+  });
+
+  // Watch for isProvider value changes
+  const isProvider = signupForm.watch("isProvider");
+
   // Form submission handlers
   const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
+    if (data.isProvider) {
+      setActiveTab('provider');
+      return;
+    }
+    
     setIsLoading(prev => ({ ...prev, signup: true }));
     try {
-      const { confirmPassword, ...signupData } = data;
+      const { confirmPassword, isProvider, ...signupData } = data;
       await authAPI.signup(signupData);
       toast({
         title: "Account created!",
@@ -127,6 +165,29 @@ const Registration = () => {
       });
     } finally {
       setIsLoading(prev => ({ ...prev, login: false }));
+    }
+  };
+
+  const onProviderSubmit = async (data: z.infer<typeof providerSchema>) => {
+    setIsLoading(prev => ({ ...prev, provider: true }));
+    try {
+      const { confirmPassword, ...providerData } = data;
+      await providerAPI.registerProvider(providerData);
+      toast({
+        title: "Provider registration successful!",
+        description: "Your provider account has been created. You will be notified once your certification is complete.",
+        variant: "default",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error("Provider registration error:", error);
+      toast({
+        title: "Registration failed",
+        description: "There was an error registering your provider account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, provider: false }));
     }
   };
 
@@ -215,9 +276,10 @@ const Registration = () => {
 
           <div className="w-full max-w-md mx-auto animate-slide-in-left">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="provider">Provider</TabsTrigger>
               </TabsList>
               <TabsContent value="signup">
                 <Card className="shadow-soft">
@@ -311,6 +373,28 @@ const Registration = () => {
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={signupForm.control}
+                          name="isProvider"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                  I am a solar provider
+                                </FormLabel>
+                                <FormDescription>
+                                  Check this if you want to register as a solar installation provider
+                                </FormDescription>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
                       </CardContent>
                       <CardFooter>
                         <Button 
@@ -319,7 +403,7 @@ const Registration = () => {
                           disabled={isLoading.signup}
                         >
                           {isLoading.signup && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Create Account
+                          {isProvider ? "Continue as Provider" : "Create Account"}
                         </Button>
                       </CardFooter>
                     </form>
@@ -392,6 +476,182 @@ const Registration = () => {
                         >
                           {isLoading.login && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Login
+                        </Button>
+                      </CardFooter>
+                    </form>
+                  </Form>
+                </Card>
+              </TabsContent>
+              <TabsContent value="provider">
+                <Card className="shadow-soft">
+                  <CardHeader>
+                    <CardTitle>Provider Registration</CardTitle>
+                    <CardDescription>
+                      Register as a solar installation provider to offer your services.
+                    </CardDescription>
+                  </CardHeader>
+                  <Form {...providerForm}>
+                    <form onSubmit={providerForm.handleSubmit(onProviderSubmit)}>
+                      <CardContent className="space-y-4">
+                        <FormField
+                          control={providerForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Company/Provider Name</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="Solar Solutions Inc." 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={providerForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Email</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="contact@solarsolutions.com" 
+                                    type="email" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={providerForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Password</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={providerForm.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Confirm Password</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={providerForm.control}
+                          name="contact"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Contact Number</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="+91 9876543210" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={providerForm.control}
+                          name="location"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Location/Service Area</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="Mumbai, Maharashtra" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={providerForm.control}
+                          name="upi_id"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>UPI ID</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="business@upi" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
+                          <div className="flex items-start">
+                            <CheckCircle className="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" />
+                            <p className="text-sm">
+                              After registration, our team will review your information for certification. 
+                              You'll be notified once your provider account is certified.
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          type="submit" 
+                          className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                          disabled={isLoading.provider}
+                        >
+                          {isLoading.provider && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Register as Provider
                         </Button>
                       </CardFooter>
                     </form>

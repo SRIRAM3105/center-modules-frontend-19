@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Base URL for all API calls
@@ -79,6 +78,56 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating profile');
+    }
+  }
+};
+
+// ==========================================
+// PROVIDER API ENDPOINTS
+// ==========================================
+export const providerAPI = {
+  registerProvider: async (providerData) => {
+    try {
+      const response = await apiClient.post('/providers/register', providerData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'registering provider');
+    }
+  },
+  
+  getProviderProfile: async (providerId) => {
+    try {
+      const response = await apiClient.get(`/providers/${providerId}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching provider profile');
+    }
+  },
+  
+  updateProviderProfile: async (providerData) => {
+    try {
+      const response = await apiClient.put(`/providers/${providerData.provider_id}`, providerData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'updating provider profile');
+    }
+  },
+  
+  listProviders: async (filters = {}) => {
+    try {
+      const response = await apiClient.get('/providers', { params: filters });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'listing providers');
+    }
+  },
+  
+  getCertificationStatus: async (providerId) => {
+    try {
+      const response = await apiClient.get(`/providers/${providerId}/certification`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'checking certification status');
     }
   }
 };
