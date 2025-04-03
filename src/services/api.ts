@@ -129,6 +129,44 @@ export const providerAPI = {
     } catch (error) {
       return handleApiError(error, 'checking certification status');
     }
+  },
+  
+  getProviders: async () => {
+    try {
+      const response = await apiClient.get('/providers');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching providers');
+    }
+  },
+  
+  requestQuote: async (providerId) => {
+    try {
+      const response = await apiClient.post('/quote', { providerId });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'requesting quote');
+    }
+  },
+  
+  submitVote: async (providerVote) => {
+    try {
+      const response = await apiClient.post('/vote', providerVote);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting vote');
+    }
+  },
+  
+  getVotingResults: async (communityId) => {
+    try {
+      const response = await apiClient.get('/vote-results', {
+        params: { communityId }
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching voting results');
+    }
   }
 };
 
@@ -264,49 +302,6 @@ export const planAPI = {
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating settings');
-    }
-  }
-};
-
-// ==========================================
-// PROVIDER CONNECTION API ENDPOINTS
-// ==========================================
-export const providerAPI = {
-  getProviders: async () => {
-    try {
-      const response = await apiClient.get('/providers');
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, 'fetching providers');
-    }
-  },
-  
-  requestQuote: async (providerId) => {
-    try {
-      const response = await apiClient.post('/quote', { providerId });
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, 'requesting quote');
-    }
-  },
-  
-  submitVote: async (providerVote) => {
-    try {
-      const response = await apiClient.post('/vote', providerVote);
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, 'submitting vote');
-    }
-  },
-  
-  getVotingResults: async (communityId) => {
-    try {
-      const response = await apiClient.get('/vote-results', {
-        params: { communityId }
-      });
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, 'fetching voting results');
     }
   }
 };

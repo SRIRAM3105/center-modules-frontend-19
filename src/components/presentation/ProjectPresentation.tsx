@@ -12,8 +12,17 @@ interface Slide {
   section?: string;
 }
 
-const ProjectPresentation = () => {
-  const slides: Slide[] = [
+interface AdditionalSection {
+  title: string;
+  content: string;
+}
+
+interface ProjectPresentationProps {
+  additionalSections?: AdditionalSection[];
+}
+
+const ProjectPresentation: React.FC<ProjectPresentationProps> = ({ additionalSections = [] }) => {
+  const baseSlides: Slide[] = [
     {
       title: "Community Solar Platform",
       content: "A comprehensive solution for community solar adoption and management",
@@ -369,6 +378,15 @@ function EnergyMonitoringDashboard({ communityId }) {
       background: "bg-gradient-to-r from-eco-500/20 to-solar-500/20"
     }
   ];
+
+  const additionalSlidesMapped = additionalSections.map(section => ({
+    title: section.title,
+    content: section.content,
+    background: "bg-eco-50",
+    section: "Additional Information"
+  }));
+
+  const slides = [...baseSlides, ...additionalSlidesMapped];
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
