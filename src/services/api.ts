@@ -1,9 +1,9 @@
 
 import axios from 'axios';
 
-// Base URL for all API calls - would be replaced with your actual backend URL
+// Base URL for all API calls - pointing to our Spring Boot backend
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-backend-api.com/api' 
+  ? 'http://localhost:8080/api' // Change this to your production URL when deployed
   : 'http://localhost:8080/api';
 
 // Configure axios defaults
@@ -164,9 +164,9 @@ export const providerAPI = {
     }
   },
   
-  requestQuote: async (providerId) => {
+  requestQuote: async (providerId, quoteData) => {
     try {
-      const response = await apiClient.post(`/providers/${providerId}/quotes`);
+      const response = await apiClient.post(`/providers/${providerId}/quotes`, quoteData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'requesting quote');

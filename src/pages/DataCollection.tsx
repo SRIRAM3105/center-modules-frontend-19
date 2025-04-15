@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Section } from '@/components/shared/Section';
@@ -47,8 +48,8 @@ const DataCollection = () => {
         address
       };
 
-      // Submit to backend - using the correct API function with an empty object as the second parameter
-      const result = await dataCollectionAPI.calculateSolarPlan(energyData, {});
+      // Submit to backend - adding the second parameter
+      const result = await dataCollectionAPI.calculateSolarPlan('temp-address-id', energyData);
       
       // Store result in localStorage for access in provider matching page
       localStorage.setItem('solarPlanData', JSON.stringify(result));
