@@ -6,15 +6,18 @@ import { FeatureCard } from '@/components/shared/FeatureCard';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { UserPlus, BarChart2, Users, Sun, Zap, CreditCard, Presentation } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Home = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen">
       <HeroSection
         title="Harness the Power of Community Solar"
         subtitle="Join forces with your community to make solar energy more accessible, affordable, and impactful for everyone."
-        primaryButtonText="Get Started"
-        primaryButtonLink="/registration"
+        primaryButtonText={isAuthenticated ? "Go to Dashboard" : "Get Started"}
+        primaryButtonLink={isAuthenticated ? "/data-collection" : "/registration"}
         secondaryButtonText="Learn More"
         secondaryButtonLink="#features"
         image="/lovable-uploads/469fe02e-dec9-4c4e-902e-dc07bc5445ef.png"
@@ -127,16 +130,19 @@ const Home = () => {
             Take the first step towards sustainable energy and join a community of like-minded individuals committed to making a difference.
           </p>
           <div className="mt-8 flex flex-wrap gap-4 justify-center">
-            <Link to="/registration">
-              <Button size="lg" className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
-                Get Started Now
-              </Button>
-            </Link>
-            <Link to="/data-collection">
-              <Button variant="outline" size="lg" className="button-animation">
-                Calculate Your Savings
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/data-collection">
+                <Button size="lg" className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
+                  Go to Your Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/registration">
+                <Button size="lg" className="button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600">
+                  Get Started Now
+                </Button>
+              </Link>
+            )}
             <Link to="/presentation">
               <Button variant="outline" size="lg" className="button-animation flex items-center gap-2">
                 <Presentation className="h-4 w-4" />

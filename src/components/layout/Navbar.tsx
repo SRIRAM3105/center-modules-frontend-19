@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const location = useLocation();
+  const { isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,14 +31,21 @@ export const Navbar: React.FC = () => {
     setIsDarkMode(!isDarkMode);
   };
 
-  const navLinks = [
+  // Define navigation links based on authentication status
+  const publicNavLinks = [
     { path: '/', label: 'Home' },
     { path: '/registration', label: 'Registration' },
+  ];
+
+  const authenticatedNavLinks = [
+    { path: '/', label: 'Home' },
     { path: '/data-collection', label: 'Data Collection' },
     { path: '/provider-matching', label: 'Provider Matching' },
     { path: '/payment', label: 'Payment' },
     { path: '/monitoring', label: 'Monitoring' },
   ];
+
+  const navLinks = isAuthenticated ? authenticatedNavLinks : publicNavLinks;
 
   return (
     <header
@@ -89,14 +98,24 @@ export const Navbar: React.FC = () => {
               {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
-            <Link to="/registration">
+            {isAuthenticated ? (
               <Button 
-                variant="default" 
-                className="hidden md:flex button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                variant="outline" 
+                className="hidden md:flex items-center gap-2"
+                onClick={logout}
               >
-                Get Started
+                <LogOut className="h-4 w-4" /> Logout
               </Button>
-            </Link>
+            ) : (
+              <Link to="/registration">
+                <Button 
+                  variant="default" 
+                  className="hidden md:flex button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                >
+                  Get Started
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile menu button */}
             <Button
@@ -129,14 +148,24 @@ export const Navbar: React.FC = () => {
                 {link.label}
               </Link>
             ))}
-            <Link to="/registration" className="mt-2">
+            {isAuthenticated ? (
               <Button 
-                variant="default" 
-                className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                variant="outline" 
+                className="mt-2 w-full flex items-center justify-center gap-2"
+                onClick={logout}
               >
-                Get Started
+                <LogOut className="h-4 w-4" /> Logout
               </Button>
-            </Link>
+            ) : (
+              <Link to="/registration" className="mt-2">
+                <Button 
+                  variant="default" 
+                  className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                >
+                  Get Started
+                </Button>
+              </Link>
+            )}
           </nav>
         </div>
       )}

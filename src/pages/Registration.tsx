@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -16,8 +15,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { authAPI, communityAPI, providerAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Define schemas for form validation
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -66,8 +65,8 @@ const Registration = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
-  // Form setup
   const signupForm = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -114,10 +113,8 @@ const Registration = () => {
     }
   });
 
-  // Watch for isProvider value changes
   const isProvider = signupForm.watch("isProvider");
 
-  // Form submission handlers
   const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
     if (data.isProvider) {
       setActiveTab('provider');
@@ -127,13 +124,20 @@ const Registration = () => {
     setIsLoading(prev => ({ ...prev, signup: true }));
     try {
       const { confirmPassword, isProvider, ...signupData } = data;
-      await authAPI.signup(signupData);
+      const response = await authAPI.signup(signupData);
       toast({
         title: "Account created!",
         description: "Your account has been successfully created.",
         variant: "default",
       });
-      navigate('/data-collection');
+      
+      try {
+        await login(data.email, data.password);
+        navigate('/data-collection');
+      } catch (loginError) {
+        console.error("Auto-login error:", loginError);
+        setActiveTab('login');
+      }
     } catch (error) {
       console.error("Signup error:", error);
       toast({
@@ -149,7 +153,7 @@ const Registration = () => {
   const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
     setIsLoading(prev => ({ ...prev, login: true }));
     try {
-      await authAPI.login(data);
+      await login(data.email, data.password);
       toast({
         title: "Login successful!",
         description: "You have been logged in successfully.",
@@ -200,7 +204,6 @@ const Registration = () => {
         description: `${communities.length} communities found in your area.`,
         variant: "default",
       });
-      // Here you could update state to show the results or navigate to a results page
     } catch (error) {
       console.error("Browse communities error:", error);
       toast({
@@ -222,7 +225,6 @@ const Registration = () => {
         description: "Your community has been successfully created.",
         variant: "default",
       });
-      // Here you could navigate to the new community page
     } catch (error) {
       console.error("Create community error:", error);
       toast({
