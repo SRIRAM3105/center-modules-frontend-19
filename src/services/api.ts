@@ -1,7 +1,10 @@
+
 import axios from 'axios';
 
-// Base URL for all API calls
-const API_BASE_URL = 'http://localhost:8080/api';
+// Base URL for all API calls - would be replaced with your actual backend URL
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-backend-api.com/api' 
+  : 'http://localhost:8080/api';
 
 // Configure axios defaults
 const apiClient = axios.create({
@@ -25,19 +28,39 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Add a response interceptor for consistent error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle token expiration or authentication errors
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Error handling helper
 const handleApiError = (error, context) => {
   console.error(`Error during ${context}:`, error);
-  throw error;
+  
+  // Return a structured error object for component use
+  return {
+    error: true,
+    message: error.response?.data?.message || `An error occurred during ${context}`,
+    status: error.response?.status || 500,
+    details: error.response?.data || error.message
+  };
 };
 
 // ==========================================
-// REGISTRATION API ENDPOINTS
+// AUTH API ENDPOINTS
 // ==========================================
 export const authAPI = {
   signup: async (userData) => {
     try {
-      const response = await apiClient.post('/signup', userData);
+      const response = await apiClient.post('/auth/signup', userData);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
@@ -49,7 +72,7 @@ export const authAPI = {
   
   login: async (credentials) => {
     try {
-      const response = await apiClient.post('/login', credentials);
+      const response = await apiClient.post('/auth/login', credentials);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
@@ -61,11 +84,12 @@ export const authAPI = {
   
   logout: () => {
     localStorage.removeItem('token');
+    return { success: true };
   },
   
   getProfile: async () => {
     try {
-      const response = await apiClient.get('/profile');
+      const response = await apiClient.get('/auth/profile');
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching profile');
@@ -74,7 +98,7 @@ export const authAPI = {
   
   updateProfile: async (userData) => {
     try {
-      const response = await apiClient.put('/profile', userData);
+      const response = await apiClient.put('/auth/profile', userData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating profile');
@@ -88,7 +112,7 @@ export const authAPI = {
 export const providerAPI = {
   registerProvider: async (providerData) => {
     try {
-      const response = await apiClient.post('/providers/register', providerData);
+      const response = await apiClient.post('/providers', providerData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'registering provider');
@@ -104,9 +128,9 @@ export const providerAPI = {
     }
   },
   
-  updateProviderProfile: async (providerData) => {
+  updateProviderProfile: async (providerId, providerData) => {
     try {
-      const response = await apiClient.put(`/providers/${providerData.provider_id}`, providerData);
+      const response = await apiClient.put(`/providers/${providerId}`, providerData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating provider profile');
@@ -142,16 +166,16 @@ export const providerAPI = {
   
   requestQuote: async (providerId) => {
     try {
-      const response = await apiClient.post('/quote', { providerId });
+      const response = await apiClient.post(`/providers/${providerId}/quotes`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'requesting quote');
     }
   },
   
-  submitVote: async (providerVote) => {
+  submitVote: async (communityId, providerVote) => {
     try {
-      const response = await apiClient.post('/vote', providerVote);
+      const response = await apiClient.post(`/communities/${communityId}/votes`, providerVote);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'submitting vote');
@@ -160,9 +184,7 @@ export const providerAPI = {
   
   getVotingResults: async (communityId) => {
     try {
-      const response = await apiClient.get('/vote-results', {
-        params: { communityId }
-      });
+      const response = await apiClient.get(`/communities/${communityId}/votes`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching voting results');
@@ -183,11 +205,9 @@ export const communityAPI = {
     }
   },
   
-  browseCommunities: async (location) => {
+  browseCommunities: async (params = {}) => {
     try {
-      const response = await apiClient.get('/communities/browse', {
-        params: { location }
-      });
+      const response = await apiClient.get('/communities', { params });
       return response.data;
     } catch (error) {
       return handleApiError(error, 'browsing communities');
@@ -196,25 +216,25 @@ export const communityAPI = {
   
   createCommunity: async (communityData) => {
     try {
-      const response = await apiClient.post('/communities/create', communityData);
+      const response = await apiClient.post('/communities', communityData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'creating community');
     }
   },
   
-  joinCommunity: async (communityId) => {
+  joinCommunity: async (communityId, userData = {}) => {
     try {
-      const response = await apiClient.post('/join-community', { communityId });
+      const response = await apiClient.post(`/communities/${communityId}/members`, userData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'joining community');
     }
   },
   
-  updateAllocation: async (allocation) => {
+  updateAllocation: async (communityId, allocation) => {
     try {
-      const response = await apiClient.post('/update-allocation', { allocation });
+      const response = await apiClient.put(`/communities/${communityId}/allocation`, { allocation });
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating allocation');
@@ -228,36 +248,34 @@ export const communityAPI = {
 export const dataCollectionAPI = {
   submitAddress: async (addressData) => {
     try {
-      const response = await apiClient.post('/address', addressData);
+      const response = await apiClient.post('/data/addresses', addressData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'submitting address');
     }
   },
   
-  getSolarPotential: async (location) => {
+  getSolarPotential: async (addressId) => {
     try {
-      const response = await apiClient.get('/solar-potential', {
-        params: { location }
-      });
+      const response = await apiClient.get(`/data/addresses/${addressId}/solar-potential`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching solar potential');
     }
   },
   
-  submitCommunityDemand: async (demandData) => {
+  submitCommunityDemand: async (communityId, demandData) => {
     try {
-      const response = await apiClient.post('/community-demand', demandData);
+      const response = await apiClient.post(`/communities/${communityId}/demand`, demandData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'submitting community demand');
     }
   },
   
-  calculateSolarPlan: async (energyData) => {
+  calculateSolarPlan: async (addressId, energyData) => {
     try {
-      const response = await apiClient.post('/calculate-solar-plan', energyData);
+      const response = await apiClient.post(`/data/addresses/${addressId}/solar-plan`, energyData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'calculating solar plan');
@@ -269,36 +287,36 @@ export const dataCollectionAPI = {
 // PLAN GENERATION API ENDPOINTS
 // ==========================================
 export const planAPI = {
-  generateSolarPlan: async (planData) => {
+  generateSolarPlan: async (addressId, planData) => {
     try {
-      const response = await apiClient.post('/solar-plan', planData);
+      const response = await apiClient.post(`/plans/${addressId}`, planData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'generating solar plan');
     }
   },
   
-  getRoofEstimates: async (buildingData) => {
+  getRoofEstimates: async (addressId) => {
     try {
-      const response = await apiClient.post('/roof-estimate', buildingData);
+      const response = await apiClient.get(`/plans/${addressId}/roof-estimate`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'getting roof estimates');
     }
   },
   
-  submitHouseInfo: async (houseData) => {
+  submitHouseInfo: async (addressId, houseData) => {
     try {
-      const response = await apiClient.post('/houseinfo', houseData);
+      const response = await apiClient.post(`/plans/${addressId}/house-info`, houseData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'submitting house info');
     }
   },
   
-  updateSettings: async (settings) => {
+  updateSettings: async (planId, settings) => {
     try {
-      const response = await apiClient.post('/settings', settings);
+      const response = await apiClient.put(`/plans/${planId}/settings`, settings);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating settings');
@@ -310,18 +328,18 @@ export const planAPI = {
 // COST SHARING API ENDPOINTS
 // ==========================================
 export const costAPI = {
-  updateCostShare: async (costShareData) => {
+  updateCostShare: async (communityId, costShareData) => {
     try {
-      const response = await apiClient.post('/cost-share', costShareData);
+      const response = await apiClient.put(`/communities/${communityId}/cost-share`, costShareData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating cost sharing');
     }
   },
   
-  getPayments: async () => {
+  getPayments: async (userId) => {
     try {
-      const response = await apiClient.get('/payments');
+      const response = await apiClient.get(`/payments/user/${userId}`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching payments');
@@ -330,16 +348,16 @@ export const costAPI = {
   
   makePayment: async (paymentData) => {
     try {
-      const response = await apiClient.post('/pay', paymentData);
+      const response = await apiClient.post('/payments', paymentData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'processing payment');
     }
   },
   
-  getInvoices: async () => {
+  getInvoices: async (userId) => {
     try {
-      const response = await apiClient.get('/invoices');
+      const response = await apiClient.get(`/invoices/user/${userId}`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching invoices');
@@ -353,9 +371,7 @@ export const costAPI = {
 export const installationAPI = {
   getInstallationStatus: async (installationId) => {
     try {
-      const response = await apiClient.get('/installation-status', {
-        params: { installationId }
-      });
+      const response = await apiClient.get(`/installations/${installationId}`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching installation status');
@@ -364,18 +380,16 @@ export const installationAPI = {
   
   getMilestones: async (installationId) => {
     try {
-      const response = await apiClient.get('/milestones', {
-        params: { installationId }
-      });
+      const response = await apiClient.get(`/installations/${installationId}/milestones`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching milestones');
     }
   },
   
-  submitFeedback: async (feedbackData) => {
+  submitFeedback: async (installationId, feedbackData) => {
     try {
-      const response = await apiClient.post('/feedback', feedbackData);
+      const response = await apiClient.post(`/installations/${installationId}/feedback`, feedbackData);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'submitting feedback');
@@ -389,7 +403,7 @@ export const installationAPI = {
 export const monitoringAPI = {
   getSavingsAnalysis: async (communityId) => {
     try {
-      const response = await apiClient.post('/savings-analysis', { communityId });
+      const response = await apiClient.get(`/communities/${communityId}/savings`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching savings analysis');
@@ -398,27 +412,25 @@ export const monitoringAPI = {
   
   getCarbonReport: async (communityId) => {
     try {
-      const response = await apiClient.get('/carbon-report', {
-        params: { communityId }
-      });
+      const response = await apiClient.get(`/communities/${communityId}/carbon-report`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching carbon report');
     }
   },
   
-  getAlerts: async () => {
+  getAlerts: async (userId) => {
     try {
-      const response = await apiClient.get('/alerts');
+      const response = await apiClient.get(`/monitoring/alerts/user/${userId}`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching alerts');
     }
   },
   
-  getEnergyData: async (userId) => {
+  getEnergyData: async (installationId) => {
     try {
-      const response = await apiClient.post('/energy-data', { userId });
+      const response = await apiClient.get(`/monitoring/energy-data/${installationId}`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching energy data');
