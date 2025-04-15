@@ -16,7 +16,7 @@ interface Slide {
 interface AdditionalSection {
   title: string;
   content: string;
-  image?: string;  // Added the optional image property
+  image?: string;
   background?: string;
   section?: string;
 }
@@ -386,8 +386,9 @@ function EnergyMonitoringDashboard({ communityId }) {
   const additionalSlidesMapped = additionalSections.map(section => ({
     title: section.title,
     content: section.content,
-    background: "bg-eco-50",
-    section: "Additional Information"
+    image: section.image, // Explicitly include the image property
+    background: section.background || "bg-eco-50",
+    section: section.section || "Additional Information"
   }));
 
   const slides = [...baseSlides, ...additionalSlidesMapped];
