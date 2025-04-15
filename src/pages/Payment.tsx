@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,6 @@ import { Slider } from "@/components/ui/slider";
 import { communityAPI, costAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
-// Define the member type
 type Member = {
   name: string;
   allocation: number;
@@ -25,7 +23,6 @@ type Member = {
   status: string;
 };
 
-// Define payment form data type
 type PaymentFormData = {
   cardNumber: string;
   expiryDate: string;
@@ -91,20 +88,16 @@ const Payment = () => {
     }
   ]);
 
-  // Recalculate system share, costs, and contributions based on new allocation
   const calculateMemberDetails = (allocation: number) => {
     const totalSystemSize = 48; // kW
     const totalProjectCost = 3000000; // ₹
     const monthlyMaintenanceFund = 15000; // ₹
 
-    // Calculate system share based on allocation percentage
     const systemShare = (allocation / 100 * totalSystemSize).toFixed(1);
     
-    // Calculate initial cost based on allocation percentage
     const initialCost = Math.round(allocation / 100 * totalProjectCost);
     const formattedInitialCost = `₹${(initialCost).toLocaleString('en-IN')}`;
     
-    // Calculate monthly contribution based on allocation percentage
     const monthlyContribution = Math.round(allocation / 100 * monthlyMaintenanceFund);
     const formattedMonthlyContribution = `₹${monthlyContribution.toLocaleString('en-IN')}`;
 
@@ -115,17 +108,13 @@ const Payment = () => {
     };
   };
 
-  // Handle allocation update
   const handleAllocationUpdate = async () => {
     setIsUpdating(true);
     try {
-      // Update the allocation to the backend
-      await communityAPI.updateAllocation(newAllocation);
+      await communityAPI.updateAllocation(newAllocation, {});
       
-      // Update local state with new allocation
       setUserAllocation(newAllocation);
       
-      // Update the user's entry in the community members array
       const updatedMembers = communityMembers.map(member => {
         if (member.name === "You") {
           const details = calculateMemberDetails(newAllocation);
@@ -159,14 +148,12 @@ const Payment = () => {
     }
   };
 
-  // Reset new allocation to current allocation when dialog opens
   const handleDialogOpen = (open: boolean) => {
     if (open) {
       setNewAllocation(userAllocation);
     }
   };
-  
-  // Handle payment form input changes
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setPaymentFormData(prev => ({
@@ -175,7 +162,6 @@ const Payment = () => {
     }));
   };
 
-  // Handle radio group change
   const handlePaymentTypeChange = (value: 'full' | 'installments') => {
     setPaymentFormData(prev => ({
       ...prev,
@@ -183,9 +169,7 @@ const Payment = () => {
     }));
   };
 
-  // Process payment
   const processPayment = async () => {
-    // Validate form
     if (!paymentFormData.cardNumber || !paymentFormData.expiryDate || 
         !paymentFormData.cvv || !paymentFormData.nameOnCard) {
       toast({
@@ -199,23 +183,18 @@ const Payment = () => {
     setIsProcessingPayment(true);
     
     try {
-      // Prepare payment data
       const paymentData = {
         amount: paymentFormData.paymentType === 'full' ? 262500 : 22917,
         paymentMethod: 'card',
         cardDetails: {
-          // In a real app, this would be handled securely through a payment processor
-          // Never send raw card details to your backend
           nameOnCard: paymentFormData.nameOnCard,
           type: 'credit',
         },
         installmentPlan: paymentFormData.paymentType === 'installments' ? 12 : null,
       };
       
-      // Call the payment API
       await costAPI.makePayment(paymentData);
       
-      // Update the user's status in community members
       const updatedMembers = communityMembers.map(member => {
         if (member.name === "You") {
           return {
@@ -235,7 +214,6 @@ const Payment = () => {
         variant: "default",
       });
       
-      // Reset form after successful payment
       setTimeout(() => {
         setPaymentSuccess(false);
         setPaymentFormData({
@@ -258,7 +236,7 @@ const Payment = () => {
       setIsProcessingPayment(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen">
       <Section className="pt-32 pb-24">

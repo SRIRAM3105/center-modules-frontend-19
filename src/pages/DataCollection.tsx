@@ -47,8 +47,8 @@ const DataCollection = () => {
         address
       };
 
-      // Submit to backend - using the correct API function
-      const result = await dataCollectionAPI.calculateSolarPlan(energyData);
+      // Submit to backend - using the correct API function with an empty object as the second parameter
+      const result = await dataCollectionAPI.calculateSolarPlan(energyData, {});
       
       // Store result in localStorage for access in provider matching page
       localStorage.setItem('solarPlanData', JSON.stringify(result));

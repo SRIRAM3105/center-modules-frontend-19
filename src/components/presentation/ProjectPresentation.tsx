@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -15,6 +16,9 @@ interface Slide {
 interface AdditionalSection {
   title: string;
   content: string;
+  image?: string;  // Added the optional image property
+  background?: string;
+  section?: string;
 }
 
 interface ProjectPresentationProps {
