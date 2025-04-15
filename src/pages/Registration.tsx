@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
-import { UserPlus, User, Mail, Lock, Users, Loader2, Building2, MapPin, CheckCircle, CreditCard } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { UserPlus, User, Mail, Lock, Users, Loader2, Building2, MapPin, CheckCircle, CreditCard, AlertCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -16,11 +16,37 @@ import { authAPI, communityAPI, providerAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// Password validation messages
+const PASSWORD_REQUIREMENTS = [
+  "At least 6 characters long",
+  "Contains at least one uppercase letter",
+  "Contains at least one lowercase letter",
+  "Contains at least one number"
+];
+
+// Zod schema for password validation
+const passwordSchema = z.string()
+  .min(6, { message: "Password must be at least 6 characters long" })
+  .refine(
+    (password) => /[A-Z]/.test(password),
+    { message: "Password must contain at least one uppercase letter" }
+  )
+  .refine(
+    (password) => /[a-z]/.test(password),
+    { message: "Password must contain at least one lowercase letter" }
+  )
+  .refine(
+    (password) => /[0-9]/.test(password),
+    { message: "Password must contain at least one number" }
+  );
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: passwordSchema,
   confirmPassword: z.string(),
   isProvider: z.boolean().default(false)
 }).refine(data => data.password === data.confirmPassword, {
@@ -31,6 +57,10 @@ const signupSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),
   password: z.string().min(1, { message: "Please enter your password" })
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email" })
 });
 
 const browseCommunitySchema = z.object({
@@ -44,7 +74,7 @@ const createCommunitySchema = z.object({
 const providerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: passwordSchema,
   confirmPassword: z.string(),
   contact: z.string().min(10, { message: "Please enter a valid contact number" }),
   location: z.string().min(2, { message: "Please enter a valid location" }),
@@ -56,16 +86,32 @@ const providerSchema = z.object({
 
 const Registration = () => {
   const [activeTab, setActiveTab] = useState('signup');
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false
+  });
   const [isLoading, setIsLoading] = useState({
     signup: false,
     login: false,
     browse: false,
     create: false,
-    provider: false
+    provider: false,
+    forgotPassword: false
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, resetPassword, isAuthenticated } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/data-collection');
+    }
+  }, [isAuthenticated, navigate]);
 
   const signupForm = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -83,6 +129,13 @@ const Registration = () => {
     defaultValues: {
       email: "",
       password: ""
+    }
+  });
+
+  const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: ""
     }
   });
 
@@ -115,6 +168,34 @@ const Registration = () => {
 
   const isProvider = signupForm.watch("isProvider");
 
+  // Password strength checker
+  const checkPasswordStrength = (password: string) => {
+    setPasswordStrength({
+      length: password.length >= 6,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password)
+    });
+  };
+
+  // Watch the password field in the signup form
+  const signupPassword = signupForm.watch("password");
+  const providerPassword = providerForm.watch("password");
+
+  // Update password strength whenever password changes
+  useEffect(() => {
+    if (signupPassword) {
+      checkPasswordStrength(signupPassword);
+    }
+  }, [signupPassword]);
+
+  // Update password strength for provider form
+  useEffect(() => {
+    if (providerPassword) {
+      checkPasswordStrength(providerPassword);
+    }
+  }, [providerPassword]);
+
   const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
     if (data.isProvider) {
       setActiveTab('provider');
@@ -125,6 +206,17 @@ const Registration = () => {
     try {
       const { confirmPassword, isProvider, ...signupData } = data;
       const response = await authAPI.signup(signupData);
+      
+      if (response.error) {
+        toast({
+          title: "Signup failed",
+          description: response.message || "There was an error creating your account. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(prev => ({ ...prev, signup: false }));
+        return;
+      }
+      
       toast({
         title: "Account created!",
         description: "Your account has been successfully created.",
@@ -154,21 +246,28 @@ const Registration = () => {
     setIsLoading(prev => ({ ...prev, login: true }));
     try {
       await login(data.email, data.password);
-      toast({
-        title: "Login successful!",
-        description: "You have been logged in successfully.",
-        variant: "default",
-      });
+      // Successful login handled by AuthContext which already shows toast
       navigate('/data-collection');
-    } catch (error) {
+    } catch (error: any) {
+      // Error handling already done in AuthContext's login function
       console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: "Invalid email or password. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(prev => ({ ...prev, login: false }));
+    }
+  };
+
+  const onForgotPasswordSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
+    setIsLoading(prev => ({ ...prev, forgotPassword: true }));
+    try {
+      await resetPassword(data.email);
+      // Toast notification handled in AuthContext
+      setForgotPasswordOpen(false);
+      forgotPasswordForm.reset();
+    } catch (error) {
+      // Error handling already done in AuthContext's resetPassword function
+      console.error("Forgot password error:", error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, forgotPassword: false }));
     }
   };
 
@@ -176,7 +275,18 @@ const Registration = () => {
     setIsLoading(prev => ({ ...prev, provider: true }));
     try {
       const { confirmPassword, ...providerData } = data;
-      await providerAPI.registerProvider(providerData);
+      const response = await providerAPI.registerProvider(providerData);
+      
+      if (response.error) {
+        toast({
+          title: "Provider registration failed",
+          description: response.message || "There was an error registering your provider account. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(prev => ({ ...prev, provider: false }));
+        return;
+      }
+      
       toast({
         title: "Provider registration successful!",
         description: "Your provider account has been created. You will be notified once your certification is complete.",
@@ -195,6 +305,7 @@ const Registration = () => {
     }
   };
 
+  // Community-related functions - keeping them for future use
   const onBrowseCommunitySubmit = async (data: z.infer<typeof browseCommunitySchema>) => {
     setIsLoading(prev => ({ ...prev, browse: true }));
     try {
@@ -236,6 +347,36 @@ const Registration = () => {
       setIsLoading(prev => ({ ...prev, create: false }));
     }
   };
+
+  const renderPasswordStrengthIndicator = () => (
+    <div className="mt-3 space-y-2 text-sm">
+      <p className="font-medium text-muted-foreground">Password requirements:</p>
+      <ul className="space-y-1">
+        {PASSWORD_REQUIREMENTS.map((req, index) => {
+          let isValid = false;
+          switch (index) {
+            case 0: isValid = passwordStrength.length; break;
+            case 1: isValid = passwordStrength.uppercase; break;
+            case 2: isValid = passwordStrength.lowercase; break;
+            case 3: isValid = passwordStrength.number; break;
+          }
+          
+          return (
+            <li key={index} className="flex items-center space-x-2">
+              {isValid ? (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-gray-400" />
+              )}
+              <span className={isValid ? "text-green-600" : "text-muted-foreground"}>
+                {req}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 
   return (
     <div className="min-h-screen">
@@ -352,6 +493,7 @@ const Registration = () => {
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                               </div>
                               <FormMessage />
+                              {signupPassword && renderPasswordStrengthIndicator()}
                             </FormItem>
                           )}
                         />
@@ -451,9 +593,48 @@ const Registration = () => {
                             <FormItem className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <FormLabel>Password</FormLabel>
-                                <a href="#" className="text-sm text-primary hover:underline">
-                                  Forgot password?
-                                </a>
+                                <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+                                  <DialogTrigger asChild>
+                                    <button type="button" className="text-sm text-primary hover:underline">
+                                      Forgot password?
+                                    </button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Reset your password</DialogTitle>
+                                      <DialogDescription>
+                                        Enter your email and we'll send you a link to reset your password.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <Form {...forgotPasswordForm}>
+                                      <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+                                        <FormField
+                                          control={forgotPasswordForm.control}
+                                          name="email"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Email</FormLabel>
+                                              <FormControl>
+                                                <Input placeholder="Enter your email" {...field} />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                        <DialogFooter>
+                                          <Button 
+                                            type="submit" 
+                                            className="w-full bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                                            disabled={isLoading.forgotPassword}
+                                          >
+                                            {isLoading.forgotPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Send Reset Link
+                                          </Button>
+                                        </DialogFooter>
+                                      </form>
+                                    </Form>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                               <div className="relative">
                                 <FormControl>
@@ -470,7 +651,7 @@ const Registration = () => {
                           )}
                         />
                       </CardContent>
-                      <CardFooter>
+                      <CardFooter className="flex flex-col space-y-4">
                         <Button 
                           type="submit" 
                           className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
@@ -479,6 +660,16 @@ const Registration = () => {
                           {isLoading.login && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Login
                         </Button>
+                        <p className="text-center text-sm text-muted-foreground">
+                          Don't have an account?{" "}
+                          <button 
+                            type="button" 
+                            className="text-primary hover:underline focus:outline-none"
+                            onClick={() => setActiveTab('signup')}
+                          >
+                            Sign up now
+                          </button>
+                        </p>
                       </CardFooter>
                     </form>
                   </Form>
@@ -553,6 +744,7 @@ const Registration = () => {
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                               </div>
                               <FormMessage />
+                              {providerPassword && renderPasswordStrengthIndicator()}
                             </FormItem>
                           )}
                         />
@@ -688,96 +880,4 @@ const Registration = () => {
                     <img 
                       src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80" 
                       alt="Community meeting" 
-                      className="object-cover w-full h-full"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 text-white font-medium">20+ Communities Available</div>
-                  </div>
-                  <FormField
-                    control={browseCommunityForm.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel>Search by Location</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter your city or ZIP code"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit"
-                    variant="outline" 
-                    className="w-full button-animation"
-                    disabled={isLoading.browse}
-                  >
-                    {isLoading.browse && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Browse Communities
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
-          </Card>
-
-          <Card className="shadow-soft animate-scale-in [animation-delay:200ms]">
-            <CardHeader>
-              <CardTitle>Create a New Community</CardTitle>
-              <CardDescription>
-                Start your own solar community and invite neighbors to join your initiative.
-              </CardDescription>
-            </CardHeader>
-            <Form {...createCommunityForm}>
-              <form onSubmit={createCommunityForm.handleSubmit(onCreateCommunitySubmit)}>
-                <CardContent className="space-y-4">
-                  <div className="aspect-video relative rounded-lg overflow-hidden">
-                    <img 
-                      src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=2940&q=80" 
-                      alt="People starting a community" 
-                      className="object-cover w-full h-full"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 text-white font-medium">Create in Minutes</div>
-                  </div>
-                  <FormField
-                    control={createCommunityForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel>Community Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter a name for your community"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit"
-                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                    disabled={isLoading.create}
-                  >
-                    {isLoading.create && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Community
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
-          </Card>
-        </div>
-      </Section>
-    </div>
-  );
-};
-
-export default Registration;
+                      className="object-

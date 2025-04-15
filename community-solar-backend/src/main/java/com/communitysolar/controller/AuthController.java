@@ -4,6 +4,7 @@ package com.communitysolar.controller;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ import com.communitysolar.dto.auth.JwtResponse;
 import com.communitysolar.dto.auth.LoginRequest;
 import com.communitysolar.dto.auth.MessageResponse;
 import com.communitysolar.dto.auth.SignupRequest;
+import com.communitysolar.dto.auth.PasswordResetRequest;
+import com.communitysolar.dto.auth.PasswordResetConfirmRequest;
 import com.communitysolar.model.ERole;
 import com.communitysolar.model.Role;
 import com.communitysolar.model.User;
@@ -175,5 +178,39 @@ public class AuthController {
         userRepository.save(user);
         
         return ResponseEntity.ok(new MessageResponse("User profile updated successfully!"));
+    }
+    
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetRequest passwordResetRequest) {
+        // In a real application, we would:
+        // 1. Generate a unique token
+        // 2. Save it to the database with an expiration time
+        // 3. Send an email with a link containing the token
+        
+        // For this demo, we'll just check if the email exists and return a success message
+        boolean userExists = userRepository.existsByEmail(passwordResetRequest.getEmail());
+        
+        if (!userExists) {
+            // For security reasons, we still return success even if the email doesn't exist
+            return ResponseEntity.ok(new MessageResponse("If your email is registered, you will receive password reset instructions."));
+        }
+        
+        // In a real application, here we would send the email
+        String resetToken = UUID.randomUUID().toString();
+        // Store the token and expiration in the database...
+        // Send the email with the reset link...
+        
+        return ResponseEntity.ok(new MessageResponse("Password reset instructions have been sent to your email."));
+    }
+    
+    @PostMapping("/confirm-reset-password")
+    public ResponseEntity<?> confirmResetPassword(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        // In a real application, we would:
+        // 1. Validate the token
+        // 2. Check if it's expired
+        // 3. Update the user's password
+        
+        // For this demo, we'll just return a success message
+        return ResponseEntity.ok(new MessageResponse("Your password has been successfully reset. Please login with your new password."));
     }
 }

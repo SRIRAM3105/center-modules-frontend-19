@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Base URL for all API calls - pointing to our Spring Boot backend
@@ -102,6 +101,27 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating profile');
+    }
+  },
+  
+  resetPassword: async (email) => {
+    try {
+      const response = await apiClient.post('/auth/reset-password', { email });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'resetting password');
+    }
+  },
+  
+  confirmResetPassword: async (token, newPassword) => {
+    try {
+      const response = await apiClient.post('/auth/confirm-reset-password', { 
+        token, 
+        newPassword 
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'confirming password reset');
     }
   }
 };
