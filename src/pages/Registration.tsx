@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,6 @@ import { authAPI, providerAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 // Password validation messages
 const PASSWORD_REQUIREMENTS = [
@@ -78,7 +78,6 @@ const providerSchema = z.object({
 
 const Registration = () => {
   const [activeTab, setActiveTab] = useState('signup');
-  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({
     length: false,
     uppercase: false,
@@ -206,10 +205,17 @@ const Registration = () => {
     setIsLoading(prev => ({ ...prev, forgotPassword: true }));
     try {
       await resetPassword(data.email);
-      setForgotPasswordOpen(false);
-      forgotPasswordForm.reset();
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for instructions to reset your password.",
+      });
     } catch (error) {
       console.error("Forgot password error:", error);
+      toast({
+        title: "Password reset failed",
+        description: "Could not send password reset email. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(prev => ({ ...prev, forgotPassword: false }));
     }
@@ -291,7 +297,7 @@ const Registration = () => {
               <span className="text-sm font-medium text-primary">User Registration</span>
             </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Join the Solar Revolution Today
+              Join Ray Unity Today
             </h1>
             <p className="text-xl text-muted-foreground">
               Create an account to join existing solar communities or start your own. Together, we can make renewable energy more accessible and affordable.
@@ -512,48 +518,15 @@ const Registration = () => {
                             <FormItem className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <FormLabel>Password</FormLabel>
-                                <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
-                                  <DialogTrigger asChild>
-                                    <button type="button" className="text-sm text-primary hover:underline">
-                                      Forgot password?
-                                    </button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Reset your password</DialogTitle>
-                                      <DialogDescription>
-                                        Enter your email and we'll send you a link to reset your password.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <Form {...forgotPasswordForm}>
-                                      <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
-                                        <FormField
-                                          control={forgotPasswordForm.control}
-                                          name="email"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Email</FormLabel>
-                                              <FormControl>
-                                                <Input placeholder="Enter your email" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <DialogFooter>
-                                          <Button 
-                                            type="submit" 
-                                            className="w-full bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                                            disabled={isLoading.forgotPassword}
-                                          >
-                                            {isLoading.forgotPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Send Reset Link
-                                          </Button>
-                                        </DialogFooter>
-                                      </form>
-                                    </Form>
-                                  </DialogContent>
-                                </Dialog>
+                                <button 
+                                  type="button" 
+                                  className="text-sm text-primary hover:underline"
+                                  onClick={() => {
+                                    setActiveTab('forgotPassword');
+                                  }}
+                                >
+                                  Forgot password?
+                                </button>
                               </div>
                               <div className="relative">
                                 <FormControl>
@@ -589,6 +562,61 @@ const Registration = () => {
                             Sign up now
                           </button>
                         </p>
+                      </CardFooter>
+                    </form>
+                  </Form>
+                </Card>
+              </TabsContent>
+              <TabsContent value="forgotPassword">
+                <Card className="shadow-soft">
+                  <CardHeader>
+                    <CardTitle>Reset your password</CardTitle>
+                    <CardDescription>
+                      Enter your email and we'll send you a link to reset your password.
+                    </CardDescription>
+                  </CardHeader>
+                  <Form {...forgotPasswordForm}>
+                    <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}>
+                      <CardContent className="space-y-4">
+                        <FormField
+                          control={forgotPasswordForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Email</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="john@example.com" 
+                                    type="email" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                      <CardFooter className="flex flex-col space-y-4">
+                        <Button 
+                          type="submit" 
+                          className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                          disabled={isLoading.forgotPassword}
+                        >
+                          {isLoading.forgotPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Send Reset Link
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost" 
+                          className="w-full"
+                          onClick={() => setActiveTab('login')}
+                        >
+                          Back to Login
+                        </Button>
                       </CardFooter>
                     </form>
                   </Form>

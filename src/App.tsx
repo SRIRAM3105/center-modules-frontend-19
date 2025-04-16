@@ -19,6 +19,9 @@ import Presentation from "@/pages/Presentation";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
+// Set the document title
+document.title = "Ray Unity - Community Solar Platform";
+
 const queryClient = new QueryClient();
 
 const App = () => (

@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const signup = async (userData) => {
+  const signup = async (userData: any) => {
     try {
       console.log("Signup with user data:", userData);
       const response = await authAPI.signup(userData);
