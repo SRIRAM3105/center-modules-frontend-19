@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "communities")
@@ -27,6 +28,9 @@ public class Community {
 
     private String location;
     private String zipCode;
+    
+    @Column(name = "invite_code", unique = true)
+    private String inviteCode;
 
     @Column(name = "member_count")
     private Integer memberCount = 0;
@@ -48,10 +52,19 @@ public class Community {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        
+        // Generate a unique invite code if not already set
+        if (inviteCode == null || inviteCode.isEmpty()) {
+            inviteCode = generateInviteCode();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    private String generateInviteCode() {
+        return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import Home from "@/pages/Home";
 import Registration from "@/pages/Registration";
+import Community from "@/pages/Community";
+import ElectricityUsage from "@/pages/ElectricityUsage";
 import DataCollection from "@/pages/DataCollection";
 import ProviderMatching from "@/pages/ProviderMatching";
 import Payment from "@/pages/Payment";
@@ -34,6 +36,8 @@ const App = () => (
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
+                <Route path="/community" element={<Community />} />
+                <Route path="/electricity-usage" element={<ElectricityUsage />} />
                 <Route path="/data-collection" element={<DataCollection />} />
                 <Route path="/provider-matching" element={<ProviderMatching />} />
                 <Route path="/payment" element={<Payment />} />

@@ -225,9 +225,11 @@ export const communityAPI = {
     }
   },
   
-  browseCommunities: async (params = {}) => {
+  browseCommunities: async (zipCode) => {
     try {
-      const response = await apiClient.get('/communities', { params });
+      const response = await apiClient.get('/communities', { 
+        params: typeof zipCode === 'string' ? { zipCode } : zipCode 
+      });
       return response.data;
     } catch (error) {
       return handleApiError(error, 'browsing communities');
@@ -243,12 +245,30 @@ export const communityAPI = {
     }
   },
   
-  joinCommunity: async (communityId, userData = {}) => {
+  joinCommunity: async (communityId) => {
     try {
-      const response = await apiClient.post(`/communities/${communityId}/members`, userData);
+      const response = await apiClient.post(`/communities/${communityId}/members`);
       return response.data;
     } catch (error) {
       return handleApiError(error, 'joining community');
+    }
+  },
+  
+  joinCommunityByCode: async (inviteCode) => {
+    try {
+      const response = await apiClient.post('/communities/join-by-code', { inviteCode });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'joining community by code');
+    }
+  },
+  
+  getUserCommunities: async () => {
+    try {
+      const response = await apiClient.get('/communities/user/communities');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching user communities');
     }
   },
   
@@ -266,6 +286,24 @@ export const communityAPI = {
 // DATA COLLECTION API ENDPOINTS
 // ==========================================
 export const dataCollectionAPI = {
+  submitElectricityUsage: async (usageData) => {
+    try {
+      const response = await apiClient.post('/electricity-usage', usageData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting electricity usage');
+    }
+  },
+  
+  getUserElectricityUsage: async () => {
+    try {
+      const response = await apiClient.get('/electricity-usage');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching electricity usage');
+    }
+  },
+  
   submitAddress: async (addressData) => {
     try {
       const response = await apiClient.post('/data/addresses', addressData);

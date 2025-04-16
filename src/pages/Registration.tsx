@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { UserPlus, User, Mail, Lock, Users, Loader2, Building2, MapPin, CheckCircle, CreditCard, AlertCircle, ArrowRight } from 'lucide-react';
+import { UserPlus, User, Mail, Lock, Loader2, Building2, MapPin, CheckCircle, CreditCard, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { authAPI, communityAPI, providerAPI } from '@/services/api';
+import { authAPI, providerAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,14 +64,6 @@ const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" })
 });
 
-const browseCommunitySchema = z.object({
-  location: z.string().min(1, { message: "Please enter a location" })
-});
-
-const createCommunitySchema = z.object({
-  name: z.string().min(2, { message: "Community name must be at least 2 characters" })
-});
-
 const providerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -97,8 +89,6 @@ const Registration = () => {
   const [isLoading, setIsLoading] = useState({
     signup: false,
     login: false,
-    browse: false,
-    create: false,
     provider: false,
     forgotPassword: false
   });
@@ -110,7 +100,7 @@ const Registration = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/data-collection');
+      navigate('/community');
     }
   }, [isAuthenticated, navigate]);
 
@@ -137,20 +127,6 @@ const Registration = () => {
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: ""
-    }
-  });
-
-  const browseCommunityForm = useForm<z.infer<typeof browseCommunitySchema>>({
-    resolver: zodResolver(browseCommunitySchema),
-    defaultValues: {
-      location: ""
-    }
-  });
-
-  const createCommunityForm = useForm<z.infer<typeof createCommunitySchema>>({
-    resolver: zodResolver(createCommunitySchema),
-    defaultValues: {
-      name: ""
     }
   });
 
@@ -226,7 +202,7 @@ const Registration = () => {
       
       try {
         await login(data.email, data.password);
-        navigate('/data-collection');
+        navigate('/community');
       } catch (loginError) {
         console.error("Auto-login error:", loginError);
         setActiveTab('login');
@@ -248,7 +224,7 @@ const Registration = () => {
     try {
       await login(data.email, data.password);
       // Successful login handled by AuthContext which already shows toast
-      navigate('/data-collection');
+      navigate('/community');
     } catch (error: any) {
       // Error handling already done in AuthContext's login function
       console.error("Login error:", error);
@@ -306,49 +282,6 @@ const Registration = () => {
     }
   };
 
-  // Community-related functions - keeping them for future use
-  const onBrowseCommunitySubmit = async (data: z.infer<typeof browseCommunitySchema>) => {
-    setIsLoading(prev => ({ ...prev, browse: true }));
-    try {
-      const communities = await communityAPI.browseCommunities(data.location);
-      toast({
-        title: "Communities found!",
-        description: `${communities.length} communities found in your area.`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Browse communities error:", error);
-      toast({
-        title: "Search failed",
-        description: "Could not load communities. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, browse: false }));
-    }
-  };
-
-  const onCreateCommunitySubmit = async (data: z.infer<typeof createCommunitySchema>) => {
-    setIsLoading(prev => ({ ...prev, create: true }));
-    try {
-      await communityAPI.createCommunity(data);
-      toast({
-        title: "Community created!",
-        description: "Your community has been successfully created.",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Create community error:", error);
-      toast({
-        title: "Creation failed",
-        description: "There was an error creating your community. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, create: false }));
-    }
-  };
-
   const renderPasswordStrengthIndicator = () => (
     <div className="mt-3 space-y-2 text-sm">
       <p className="font-medium text-muted-foreground">Password requirements:</p>
@@ -388,7 +321,7 @@ const Registration = () => {
               <span className="rounded-full bg-primary/10 p-1">
                 <UserPlus className="h-4 w-4 text-primary" />
               </span>
-              <span className="text-sm font-medium text-primary">User Registration & Community</span>
+              <span className="text-sm font-medium text-primary">User Registration</span>
             </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
               Join the Solar Revolution Today
@@ -404,15 +337,6 @@ const Registration = () => {
                 <div>
                   <h3 className="font-medium">Easy Sign-Up</h3>
                   <p className="text-sm text-muted-foreground">Create your account in minutes</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Find Your Community</h3>
-                  <p className="text-sm text-muted-foreground">Join or create local solar groups</p>
                 </div>
               </div>
             </div>
@@ -855,131 +779,6 @@ const Registration = () => {
               </TabsContent>
             </Tabs>
           </div>
-        </div>
-      </Section>
-
-      <Section className="bg-muted/30">
-        <div className="text-center max-w-3xl mx-auto mb-16 animate-slide-up">
-          <h2 className="section-title">Join a Community or Create Your Own</h2>
-          <p className="section-subtitle">
-            Connect with neighbors and friends to form solar communities, share costs, and maximize your impact.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="shadow-soft animate-scale-in [animation-delay:100ms]">
-            <CardHeader>
-              <CardTitle>Join an Existing Community</CardTitle>
-              <CardDescription>
-                Find and join solar communities in your area that are already established.
-              </CardDescription>
-            </CardHeader>
-            <Form {...browseCommunityForm}>
-              <form onSubmit={browseCommunityForm.handleSubmit(onBrowseCommunitySubmit)}>
-                <CardContent className="space-y-4">
-                  <div className="aspect-video relative rounded-lg overflow-hidden">
-                    <img 
-                      src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80" 
-                      alt="Community meeting" 
-                      className="object-cover w-full h-full"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 p-4 text-white">
-                      <h3 className="text-lg font-medium">Find Local Communities</h3>
-                      <p className="text-sm opacity-90">Join forces with neighbors for solar power</p>
-                    </div>
-                  </div>
-                  <FormField
-                    control={browseCommunityForm.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Your Location</FormLabel>
-                        <div className="relative">
-                          <FormControl>
-                            <Input placeholder="Enter city or area" className="pl-10" {...field} />
-                          </FormControl>
-                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit" 
-                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                    disabled={isLoading.browse}
-                  >
-                    {isLoading.browse && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Find Communities
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
-          </Card>
-
-          <Card className="shadow-soft animate-scale-in [animation-delay:200ms]">
-            <CardHeader>
-              <CardTitle>Start Your Own Community</CardTitle>
-              <CardDescription>
-                Create a new solar community and invite others to join.
-              </CardDescription>
-            </CardHeader>
-            <Form {...createCommunityForm}>
-              <form onSubmit={createCommunityForm.handleSubmit(onCreateCommunitySubmit)}>
-                <CardContent className="space-y-4">
-                  <div className="aspect-video relative rounded-lg overflow-hidden">
-                    <img 
-                      src="https://images.unsplash.com/photo-1605901309584-818e25960a8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1980&q=80" 
-                      alt="Solar panels" 
-                      className="object-cover w-full h-full"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 p-4 text-white">
-                      <h3 className="text-lg font-medium">Create a Community</h3>
-                      <p className="text-sm opacity-90">Lead the solar revolution in your area</p>
-                    </div>
-                  </div>
-                  <FormField
-                    control={createCommunityForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Community Name</FormLabel>
-                        <div className="relative">
-                          <FormControl>
-                            <Input placeholder="Enter a name for your community" className="pl-10" {...field} />
-                          </FormControl>
-                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="px-4 py-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      After creating your community, you'll be able to invite members, 
-                      set community goals, and work together towards a sustainable future.
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit" 
-                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                    disabled={isLoading.create}
-                  >
-                    {isLoading.create && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Users className="h-4 w-4 mr-2" />
-                    Create Community
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
-          </Card>
         </div>
       </Section>
     </div>

@@ -10,19 +10,26 @@ import org.springframework.web.bind.annotation.*;
 import com.communitysolar.dto.auth.MessageResponse;
 import com.communitysolar.model.Community;
 import com.communitysolar.model.CommunityMember;
+import com.communitysolar.model.ERole;
+import com.communitysolar.model.Role;
 import com.communitysolar.model.User;
+import com.communitysolar.repository.CommunityMemberRepository;
 import com.communitysolar.repository.CommunityRepository;
+import com.communitysolar.repository.RoleRepository;
 import com.communitysolar.repository.UserRepository;
 import com.communitysolar.security.UserDetailsImpl;
 
 import jakarta.validation.Valid;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @RestController
-@RequestMapping("/communities")
+@RequestMapping("/api/communities")
 public class CommunityController {
 
     @Autowired
@@ -30,6 +37,12 @@ public class CommunityController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private CommunityMemberRepository communityMemberRepository;
+    
+    @Autowired
+    private RoleRepository roleRepository;
 
     @GetMapping
     public ResponseEntity<List<Community>> getAllCommunities(
@@ -77,13 +90,28 @@ public class CommunityController {
         creatorMember.setEnergyAllocation(100.0); // Initial full allocation
         creatorMember.setCostShare(100.0); // Initial full cost share
         
-        // In a real-world app, you would save this to a communityMemberRepository
+        communityMemberRepository.save(creatorMember);
         
-        return ResponseEntity.ok(savedCommunity);
+        // Add the admin role to the creator for this community
+        Optional<Role> adminRoleOptional = roleRepository.findByName(ERole.ROLE_ADMIN);
+        if (adminRoleOptional.isPresent()) {
+            Role adminRole = adminRoleOptional.get();
+            Set<Role> userRoles = user.getRoles();
+            userRoles.add(adminRole);
+            user.setRoles(userRoles);
+            userRepository.save(user);
+        }
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Community created successfully");
+        response.put("community", savedCommunity);
+        response.put("inviteCode", savedCommunity.getInviteCode());
+        
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/members")
-    public ResponseEntity<?> joinCommunity(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> userData) {
+    public ResponseEntity<?> joinCommunity(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         
@@ -92,7 +120,12 @@ public class CommunityController {
         
         return communityRepository.findById(id)
                 .map(community -> {
-                    // In a real application, you'd check if the user is already a member
+                    // Check if user is already a member
+                    if (communityMemberRepository.existsByCommunityAndUser(community, user)) {
+                        return ResponseEntity
+                                .badRequest()
+                                .body(new MessageResponse("Error: You are already a member of this community!"));
+                    }
                     
                     // Create a new community member
                     CommunityMember member = new CommunityMember();
@@ -103,7 +136,7 @@ public class CommunityController {
                     member.setEnergyAllocation(0.0); // Will be adjusted when allocation is updated
                     member.setCostShare(0.0); // Will be adjusted when cost sharing is updated
                     
-                    // In a real-world app, you would save this to a communityMemberRepository
+                    communityMemberRepository.save(member);
                     
                     // Update community member count
                     community.setMemberCount(community.getMemberCount() + 1);
@@ -116,6 +149,61 @@ public class CommunityController {
                     return ResponseEntity.ok(response);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    
+    @PostMapping("/join-by-code")
+    public ResponseEntity<?> joinCommunityByCode(@RequestBody Map<String, String> joinRequest) {
+        String inviteCode = joinRequest.get("inviteCode");
+        
+        if (inviteCode == null || inviteCode.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Invite code is required!"));
+        }
+        
+        Optional<Community> communityOptional = communityRepository.findByInviteCode(inviteCode);
+        
+        if (!communityOptional.isPresent()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Invalid invite code!"));
+        }
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+        
+        Community community = communityOptional.get();
+        
+        // Check if user is already a member
+        if (communityMemberRepository.existsByCommunityAndUser(community, user)) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: You are already a member of this community!"));
+        }
+        
+        // Create a new community member
+        CommunityMember member = new CommunityMember();
+        member.setCommunity(community);
+        member.setUser(user);
+        
+        // Default allocations
+        member.setEnergyAllocation(0.0);
+        member.setCostShare(0.0);
+        
+        communityMemberRepository.save(member);
+        
+        // Update community member count
+        community.setMemberCount(community.getMemberCount() + 1);
+        communityRepository.save(community);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Successfully joined the community");
+        response.put("community", community);
+        
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/allocation")
@@ -132,5 +220,22 @@ public class CommunityController {
                     return ResponseEntity.ok(response);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/user/communities")
+    public ResponseEntity<?> getUserCommunities() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+        
+        List<CommunityMember> memberships = communityMemberRepository.findByUser(user);
+        
+        List<Community> communities = memberships.stream()
+                .map(CommunityMember::getCommunity)
+                .toList();
+        
+        return ResponseEntity.ok(communities);
     }
 }
