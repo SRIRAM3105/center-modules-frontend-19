@@ -20,6 +20,7 @@ type AuthContextType = {
   login: (username: string, password: string) => Promise<any>;
   logout: () => void;
   resetPassword: (email: string) => Promise<any>;
+  signup: (userData: any) => Promise<any>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +59,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const signup = async (userData) => {
+    try {
+      console.log("Signup with user data:", userData);
+      const response = await authAPI.signup(userData);
+      
+      if (response.error) {
+        toast({
+          title: "Signup failed",
+          description: response.message || "There was an error creating your account. Please try again.",
+          variant: "destructive",
+        });
+        throw new Error(response.message || "Signup failed");
+      }
+      
+      localStorage.setItem('token', response.token);
+      setIsAuthenticated(true);
+      setUser({
+        id: response.id,
+        username: response.username,
+        email: response.email,
+        roles: response.roles || ['ROLE_USER']
+      });
+      
+      toast({
+        title: "Account created",
+        description: "Your account has been successfully created!",
+      });
+      
+      return response;
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      throw error;
+    }
+  };
+
   const login = async (username: string, password: string) => {
     try {
       console.log("Login attempt with:", { username, password });
@@ -78,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: response.id,
         username: response.username,
         email: response.email,
-        roles: response.roles
+        roles: response.roles || ['ROLE_USER']
       });
       
       toast({
@@ -129,7 +165,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, loading, login, logout, resetPassword }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      user, 
+      loading, 
+      login, 
+      logout, 
+      resetPassword,
+      signup 
+    }}>
       {children}
     </AuthContext.Provider>
   );

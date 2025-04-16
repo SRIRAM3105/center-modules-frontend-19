@@ -11,6 +11,7 @@ import Community from "@/pages/Community";
 import ElectricityUsage from "@/pages/ElectricityUsage";
 import DataCollection from "@/pages/DataCollection";
 import ProviderMatching from "@/pages/ProviderMatching";
+import CostSharing from "@/pages/CostSharing";
 import Payment from "@/pages/Payment";
 import Monitoring from "@/pages/Monitoring";
 import NotFound from "@/pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/electricity-usage" element={<ElectricityUsage />} />
                 <Route path="/data-collection" element={<DataCollection />} />
                 <Route path="/provider-matching" element={<ProviderMatching />} />
+                <Route path="/cost-sharing" element={<CostSharing />} />
                 <Route path="/payment" element={<Payment />} />
                 <Route path="/monitoring" element={<Monitoring />} />
               </Route>

@@ -1,10 +1,7 @@
-
 import axios from 'axios';
 
-// Base URL for all API calls - pointing to our Spring Boot backend
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'http://localhost:8080' // Change this to your production URL when deployed
-  : 'http://localhost:8080';
+// Base URL for all API calls - using a dynamic URL that works in both development and production
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 // Configure axios defaults
 const apiClient = axios.create({
@@ -21,22 +18,33 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    console.log('API Request:', { url: config.url, method: config.method, data: config.data });
     return config;
   },
   (error) => {
+    console.error('API Request Error:', error);
     return Promise.reject(error);
   }
 );
 
 // Add a response interceptor for consistent error handling
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('API Response:', { url: response.config.url, status: response.status, data: response.data });
+    return response;
+  },
   (error) => {
     // Handle token expiration or authentication errors
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+    console.error('API Response Error:', { 
+      url: error.config?.url, 
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data 
+    });
     return Promise.reject(error);
   }
 );

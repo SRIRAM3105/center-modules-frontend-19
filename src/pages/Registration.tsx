@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -96,7 +95,6 @@ const Registration = () => {
   const { toast } = useToast();
   const { login, resetPassword, isAuthenticated } = useAuth();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/community');
@@ -147,7 +145,6 @@ const Registration = () => {
 
   const isProvider = signupForm.watch("isProvider");
 
-  // Password strength checker
   const checkPasswordStrength = (password: string) => {
     setPasswordStrength({
       length: password.length >= 6,
@@ -157,18 +154,15 @@ const Registration = () => {
     });
   };
 
-  // Watch the password field in the signup form
   const signupPassword = signupForm.watch("password");
   const providerPassword = providerForm.watch("password");
 
-  // Update password strength whenever password changes
   useEffect(() => {
     if (signupPassword) {
       checkPasswordStrength(signupPassword);
     }
   }, [signupPassword]);
 
-  // Update password strength for provider form
   useEffect(() => {
     if (providerPassword) {
       checkPasswordStrength(providerPassword);
@@ -186,44 +180,10 @@ const Registration = () => {
       const { confirmPassword, isProvider, ...signupData } = data;
       console.log("Submitting signup data:", signupData);
       
-      const response = await authAPI.signup({
-        username: data.username,
-        email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName
-      });
-      
-      if (response.error) {
-        toast({
-          title: "Signup failed",
-          description: response.message || "There was an error creating your account. Please try again.",
-          variant: "destructive",
-        });
-        setIsLoading(prev => ({ ...prev, signup: false }));
-        return;
-      }
-      
-      toast({
-        title: "Account created!",
-        description: "Your account has been successfully created.",
-        variant: "default",
-      });
-      
-      try {
-        await login(data.username, data.password);
-        navigate('/community');
-      } catch (loginError) {
-        console.error("Auto-login error:", loginError);
-        setActiveTab('login');
-      }
+      await signup(signupData);
+      navigate('/community');
     } catch (error) {
       console.error("Signup error:", error);
-      toast({
-        title: "Signup failed",
-        description: "There was an error creating your account. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(prev => ({ ...prev, signup: false }));
     }
@@ -234,10 +194,8 @@ const Registration = () => {
     try {
       console.log("Login with:", data);
       await login(data.username, data.password);
-      // Successful login handled by AuthContext which already shows toast
       navigate('/community');
     } catch (error: any) {
-      // Error handling already done in AuthContext's login function
       console.error("Login error:", error);
     } finally {
       setIsLoading(prev => ({ ...prev, login: false }));
@@ -248,11 +206,9 @@ const Registration = () => {
     setIsLoading(prev => ({ ...prev, forgotPassword: true }));
     try {
       await resetPassword(data.email);
-      // Toast notification handled in AuthContext
       setForgotPasswordOpen(false);
       forgotPasswordForm.reset();
     } catch (error) {
-      // Error handling already done in AuthContext's resetPassword function
       console.error("Forgot password error:", error);
     } finally {
       setIsLoading(prev => ({ ...prev, forgotPassword: false }));
