@@ -3,11 +3,21 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
+type User = {
+  id: number;
+  username: string;
+  email: string;
+  roles: string[];
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+};
+
 type AuthContextType = {
   isAuthenticated: boolean;
-  user: any | null;
+  user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<any>;
+  login: (username: string, password: string) => Promise<any>;
   logout: () => void;
   resetPassword: (email: string) => Promise<any>;
 };
@@ -16,7 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
@@ -30,25 +40,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .then(userData => {
           if (!userData.error) {
             setUser(userData);
+          } else {
+            // If profile fetch fails with error, log the user out
+            logout();
           }
         })
         .catch(error => {
           console.error("Error fetching user profile:", error);
           // If profile fetch fails, we should log the user out
           logout();
+        })
+        .finally(() => {
+          setLoading(false);
         });
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
-      const response = await authAPI.login({ email, password });
+      console.log("Login attempt with:", { username, password });
+      const response = await authAPI.login({ username, password });
       
       if (response.error) {
         toast({
           title: "Login failed",
-          description: response.message || "Invalid email or password. Please try again.",
+          description: response.message || "Invalid username or password. Please try again.",
           variant: "destructive",
         });
         throw new Error(response.message || "Login failed");
@@ -56,7 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       localStorage.setItem('token', response.token);
       setIsAuthenticated(true);
-      setUser(response);
+      setUser({
+        id: response.id,
+        username: response.username,
+        email: response.email,
+        roles: response.roles
+      });
       
       toast({
         title: "Login successful",

@@ -1,9 +1,10 @@
+
 import axios from 'axios';
 
 // Base URL for all API calls - pointing to our Spring Boot backend
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'http://localhost:8080/api' // Change this to your production URL when deployed
-  : 'http://localhost:8080/api';
+  ? 'http://localhost:8080' // Change this to your production URL when deployed
+  : 'http://localhost:8080';
 
 // Configure axios defaults
 const apiClient = axios.create({
@@ -59,24 +60,30 @@ const handleApiError = (error, context) => {
 export const authAPI = {
   signup: async (userData) => {
     try {
+      console.log("API Signup request:", userData);
       const response = await apiClient.post('/auth/signup', userData);
+      console.log("API Signup response:", response.data);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
       return response.data;
     } catch (error) {
+      console.error("Error in signup API call:", error);
       return handleApiError(error, 'signup');
     }
   },
   
   login: async (credentials) => {
     try {
+      console.log("API Login request:", credentials);
       const response = await apiClient.post('/auth/login', credentials);
+      console.log("API Login response:", response.data);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
       return response.data;
     } catch (error) {
+      console.error("Error in login API call:", error);
       return handleApiError(error, 'login');
     }
   },

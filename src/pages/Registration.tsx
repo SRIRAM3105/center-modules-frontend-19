@@ -4,11 +4,9 @@ import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { UserPlus, User, Mail, Lock, Loader2, Building2, MapPin, CheckCircle, CreditCard, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { UserPlus, User, Mail, Lock, Loader2, Building2, MapPin, CheckCircle, AlertCircle, Phone } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Password validation messages
 const PASSWORD_REQUIREMENTS = [
@@ -45,10 +42,12 @@ const passwordSchema = z.string()
   );
 
 const signupSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
   password: passwordSchema,
   confirmPassword: z.string(),
+  firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
+  lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
   isProvider: z.boolean().default(false)
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -56,7 +55,7 @@ const signupSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email" }),
+  username: z.string().min(1, { message: "Please enter your username" }),
   password: z.string().min(1, { message: "Please enter your password" })
 });
 
@@ -67,6 +66,7 @@ const forgotPasswordSchema = z.object({
 const providerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
   password: passwordSchema,
   confirmPassword: z.string(),
   contact: z.string().min(10, { message: "Please enter a valid contact number" }),
@@ -93,7 +93,6 @@ const Registration = () => {
     forgotPassword: false
   });
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const { login, resetPassword, isAuthenticated } = useAuth();
 
@@ -107,10 +106,12 @@ const Registration = () => {
   const signupForm = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      name: "",
+      username: "",
       email: "",
       password: "",
       confirmPassword: "",
+      firstName: "",
+      lastName: "",
       isProvider: false
     }
   });
@@ -118,7 +119,7 @@ const Registration = () => {
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: ""
     }
   });
@@ -135,6 +136,7 @@ const Registration = () => {
     defaultValues: {
       name: "",
       email: "",
+      username: "",
       password: "",
       confirmPassword: "",
       contact: "",
@@ -182,7 +184,15 @@ const Registration = () => {
     setIsLoading(prev => ({ ...prev, signup: true }));
     try {
       const { confirmPassword, isProvider, ...signupData } = data;
-      const response = await authAPI.signup(signupData);
+      console.log("Submitting signup data:", signupData);
+      
+      const response = await authAPI.signup({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName
+      });
       
       if (response.error) {
         toast({
@@ -201,7 +211,7 @@ const Registration = () => {
       });
       
       try {
-        await login(data.email, data.password);
+        await login(data.username, data.password);
         navigate('/community');
       } catch (loginError) {
         console.error("Auto-login error:", loginError);
@@ -222,7 +232,8 @@ const Registration = () => {
   const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
     setIsLoading(prev => ({ ...prev, login: true }));
     try {
-      await login(data.email, data.password);
+      console.log("Login with:", data);
+      await login(data.username, data.password);
       // Successful login handled by AuthContext which already shows toast
       navigate('/community');
     } catch (error: any) {
@@ -362,14 +373,14 @@ const Registration = () => {
                       <CardContent className="space-y-4">
                         <FormField
                           control={signupForm.control}
-                          name="name"
+                          name="username"
                           render={({ field }) => (
                             <FormItem className="space-y-2">
-                              <FormLabel>Full Name</FormLabel>
+                              <FormLabel>Username</FormLabel>
                               <div className="relative">
                                 <FormControl>
                                   <Input 
-                                    placeholder="John Doe" 
+                                    placeholder="johndoe" 
                                     className="pl-10" 
                                     {...field} 
                                   />
@@ -380,6 +391,34 @@ const Registration = () => {
                             </FormItem>
                           )}
                         />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={signupForm.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem className="space-y-2">
+                                <FormLabel>First Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="John" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={signupForm.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem className="space-y-2">
+                                <FormLabel>Last Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Doe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                         <FormField
                           control={signupForm.control}
                           name="email"
@@ -492,20 +531,19 @@ const Registration = () => {
                       <CardContent className="space-y-4">
                         <FormField
                           control={loginForm.control}
-                          name="email"
+                          name="username"
                           render={({ field }) => (
                             <FormItem className="space-y-2">
-                              <FormLabel>Email</FormLabel>
+                              <FormLabel>Username</FormLabel>
                               <div className="relative">
                                 <FormControl>
                                   <Input 
-                                    placeholder="john@example.com" 
-                                    type="email" 
+                                    placeholder="johndoe" 
                                     className="pl-10" 
                                     {...field} 
                                   />
                                 </FormControl>
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                               </div>
                               <FormMessage />
                             </FormItem>
@@ -633,6 +671,26 @@ const Registration = () => {
                         />
                         <FormField
                           control={providerForm.control}
+                          name="username"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Username</FormLabel>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="solarsolutions" 
+                                    className="pl-10" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={providerForm.control}
                           name="email"
                           render={({ field }) => (
                             <FormItem className="space-y-2">
@@ -707,7 +765,7 @@ const Registration = () => {
                                     {...field} 
                                   />
                                 </FormControl>
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                               </div>
                               <FormMessage />
                             </FormItem>
