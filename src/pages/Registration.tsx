@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { authAPI, providerAPI } from '@/services/api';
+import { providerAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,10 +58,6 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: "Please enter your password" })
 });
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email" })
-});
-
 const providerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -87,12 +83,11 @@ const Registration = () => {
   const [isLoading, setIsLoading] = useState({
     signup: false,
     login: false,
-    provider: false,
-    forgotPassword: false
+    provider: false
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, resetPassword, isAuthenticated, signup } = useAuth();
+  const { login, isAuthenticated, signup } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -118,13 +113,6 @@ const Registration = () => {
     defaultValues: {
       username: "",
       password: ""
-    }
-  });
-
-  const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: {
-      email: ""
     }
   });
 
@@ -198,26 +186,6 @@ const Registration = () => {
       console.error("Login error:", error);
     } finally {
       setIsLoading(prev => ({ ...prev, login: false }));
-    }
-  };
-
-  const onForgotPasswordSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
-    setIsLoading(prev => ({ ...prev, forgotPassword: true }));
-    try {
-      await resetPassword(data.email);
-      toast({
-        title: "Password reset email sent",
-        description: "Please check your email for instructions to reset your password.",
-      });
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      toast({
-        title: "Password reset failed",
-        description: "Could not send password reset email. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, forgotPassword: false }));
     }
   };
 
@@ -516,18 +484,7 @@ const Registration = () => {
                           name="password"
                           render={({ field }) => (
                             <FormItem className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <FormLabel>Password</FormLabel>
-                                <button 
-                                  type="button" 
-                                  className="text-sm text-primary hover:underline"
-                                  onClick={() => {
-                                    setActiveTab('forgotPassword');
-                                  }}
-                                >
-                                  Forgot password?
-                                </button>
-                              </div>
+                              <FormLabel>Password</FormLabel>
                               <div className="relative">
                                 <FormControl>
                                   <Input 
@@ -562,61 +519,6 @@ const Registration = () => {
                             Sign up now
                           </button>
                         </p>
-                      </CardFooter>
-                    </form>
-                  </Form>
-                </Card>
-              </TabsContent>
-              <TabsContent value="forgotPassword">
-                <Card className="shadow-soft">
-                  <CardHeader>
-                    <CardTitle>Reset your password</CardTitle>
-                    <CardDescription>
-                      Enter your email and we'll send you a link to reset your password.
-                    </CardDescription>
-                  </CardHeader>
-                  <Form {...forgotPasswordForm}>
-                    <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}>
-                      <CardContent className="space-y-4">
-                        <FormField
-                          control={forgotPasswordForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem className="space-y-2">
-                              <FormLabel>Email</FormLabel>
-                              <div className="relative">
-                                <FormControl>
-                                  <Input 
-                                    placeholder="john@example.com" 
-                                    type="email" 
-                                    className="pl-10" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </CardContent>
-                      <CardFooter className="flex flex-col space-y-4">
-                        <Button 
-                          type="submit" 
-                          className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
-                          disabled={isLoading.forgotPassword}
-                        >
-                          {isLoading.forgotPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Send Reset Link
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost" 
-                          className="w-full"
-                          onClick={() => setActiveTab('login')}
-                        >
-                          Back to Login
-                        </Button>
                       </CardFooter>
                     </form>
                   </Form>
