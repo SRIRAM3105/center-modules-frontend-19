@@ -93,7 +93,7 @@ const Registration = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, resetPassword, isAuthenticated } = useAuth();
+  const { login, resetPassword, isAuthenticated, signup } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {

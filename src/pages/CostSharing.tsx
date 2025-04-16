@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,13 +6,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { communityAPI, providerAPI, costAPI } from '@/services/api';
-import { Building2, Users, Zap, CheckCircle, CreditCard, Timer, Vote } from 'lucide-react';
+import { Building2, Users, Zap, CheckCircle, AlertCircle, Phone, CreditCard, Timer, Vote } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
+
+// Define interface for voting results to avoid type errors
+interface VotingResults {
+  isOpen: boolean;
+  winner?: number;
+  results?: Record<string, number>;
+}
 
 const CostSharing = () => {
   const { user } = useAuth();
@@ -31,7 +38,7 @@ const CostSharing = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [votingOpen, setVotingOpen] = useState(false);
-  const [votingResults, setVotingResults] = useState([]);
+  const [votingResults, setVotingResults] = useState<VotingResults>({ isOpen: false });
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState({
@@ -82,32 +89,33 @@ const CostSharing = () => {
         setIsAdmin(isUserAdmin);
         
         // Load community members
-        const members = await communityAPI.getCommunityMembers(selectedCommunity.id);
-        if (!members.error) {
-          setCommunityMembers(members);
+        const members = await communityAPI.getCommunityDetails(selectedCommunity.id);
+        if (!members.error && members.members) {
+          setCommunityMembers(members.members);
         }
         
         // Load electricity usage for the community
-        const usageData = await communityAPI.getCommunityElectricityUsage(selectedCommunity.id);
-        if (!usageData.error) {
-          setElectricityUsage(usageData);
+        const usageData = await communityAPI.getCommunityDetails(selectedCommunity.id);
+        if (!usageData.error && usageData.electricityUsage) {
+          setElectricityUsage(usageData.electricityUsage);
           
           // Calculate total and average usage
-          const totalUnits = usageData.reduce((sum, data) => sum + data.totalUnits, 0);
+          const totalUnits = usageData.electricityUsage.reduce((sum, data) => sum + data.totalUnits, 0);
           setTotalElectricityUnits(totalUnits);
           setAverageMonthlyUsage(totalUnits / 6); // 6 months of data
         }
         
         // Load existing quotes if any
-        const existingQuotes = await providerAPI.getCommunityQuotes(selectedCommunity.id);
-        if (!existingQuotes.error) {
-          setQuotes(existingQuotes);
+        const existingQuotes = await providerAPI.getProviders();
+        if (!existingQuotes.error && existingQuotes.quotes) {
+          const communityQuotes = existingQuotes.quotes.filter(q => q.communityId === selectedCommunity.id);
+          setQuotes(communityQuotes);
         }
         
         // Load voting results if any
         const votingData = await providerAPI.getVotingResults(selectedCommunity.id);
         if (!votingData.error) {
-          setVotingResults(votingData);
+          setVotingResults(votingData || { isOpen: false });
           setVotingOpen(votingData.isOpen || false);
         }
         
@@ -185,7 +193,7 @@ const CostSharing = () => {
     if (!isAdmin) return;
     
     try {
-      const response = await providerAPI.startVoting(selectedCommunity.id);
+      const response = await providerAPI.submitVote(selectedCommunity.id, { action: 'start_voting' });
       
       if (!response.error) {
         setVotingOpen(true);
@@ -302,6 +310,7 @@ const CostSharing = () => {
     ? calculateUserShare(userMonthlyAverage, averageMonthlyUsage, winningQuote.totalCost)
     : 0;
 
+  
   return (
     <div className="min-h-screen py-16">
       <Section>
@@ -327,6 +336,7 @@ const CostSharing = () => {
               </CardContent>
             </Card>
           ) : (
+            
             <>
               {/* Community Selection */}
               <Card className="mb-8">
@@ -732,6 +742,7 @@ const CostSharing = () => {
                   
                   {/* Payment Tab */}
                   <TabsContent value="payment">
+                    
                     <Card>
                       <CardHeader>
                         <CardTitle>Solar Installation Payment</CardTitle>
@@ -826,136 +837,3 @@ const CostSharing = () => {
                                         <RadioGroup defaultValue="upi" className="space-y-4">
                                           <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="upi" id="upi" />
-                                            <Label htmlFor="upi">UPI Payment</Label>
-                                          </div>
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="card" id="card" />
-                                            <Label htmlFor="card">Credit/Debit Card</Label>
-                                          </div>
-                                        </RadioGroup>
-                                        
-                                        <div className="space-y-2">
-                                          <Label htmlFor="payment-id">Payment ID / UPI ID</Label>
-                                          <Input id="payment-id" placeholder="Enter your UPI ID or reference" />
-                                        </div>
-                                        
-                                        <div className="p-3 border rounded-md bg-primary/5">
-                                          <p className="font-medium">Amount to Pay: ${userShareAmount.toLocaleString()}</p>
-                                          <p className="text-sm text-muted-foreground mt-1">This is your share of the total installation cost.</p>
-                                        </div>
-                                      </div>
-                                      
-                                      <DialogFooter>
-                                        <Button 
-                                          onClick={() => makePayment('upi', userShareAmount)}
-                                          disabled={loading.payment}
-                                          className="w-full"
-                                        >
-                                          {loading.payment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                          Confirm Payment
-                                        </Button>
-                                      </DialogFooter>
-                                    </DialogContent>
-                                  </Dialog>
-                                </CardContent>
-                              </Card>
-                            </div>
-                            
-                            <Card>
-                              <CardHeader>
-                                <CardTitle className="text-lg">Payment Benefits</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                  <div className="flex flex-col items-center text-center p-4">
-                                    <div className="bg-primary/10 p-3 rounded-full mb-4">
-                                      <CreditCard className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <h3 className="font-medium mb-2">Proportional Cost Sharing</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                      You only pay based on your proportion of electricity usage in the community.
-                                    </p>
-                                  </div>
-                                  <div className="flex flex-col items-center text-center p-4">
-                                    <div className="bg-primary/10 p-3 rounded-full mb-4">
-                                      <Zap className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <h3 className="font-medium mb-2">Reduced Energy Bills</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                      Start saving on your monthly electricity bills once installation is complete.
-                                    </p>
-                                  </div>
-                                  <div className="flex flex-col items-center text-center p-4">
-                                    <div className="bg-primary/10 p-3 rounded-full mb-4">
-                                      <CheckCircle className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <h3 className="font-medium mb-2">Eco-Friendly Choice</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                      Contribute to a greener planet by switching to renewable solar energy.
-                                    </p>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </div>
-                        ) : (
-                          <div className="p-8 text-center">
-                            <Timer className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                            <h3 className="text-xl font-semibold mb-2">Payment Not Available Yet</h3>
-                            <p className="text-muted-foreground max-w-md mx-auto mb-4">
-                              The community voting process must be completed before payments can be made.
-                              Please wait for the voting to finish.
-                            </p>
-                            <Button variant="outline" onClick={() => setActiveTab('voting')}>
-                              Go to Voting
-                            </Button>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              )}
-            </>
-          )}
-        </div>
-      </Section>
-    </div>
-  );
-  
-  // Helper functions
-  function getStagePercentage() {
-    if (votingComplete) return 75; // Payment stage
-    if (votingOpen) return 50; // Voting stage
-    if (quotes.length > 0) return 25; // Provider quotes received
-    return 0; // Just data collection
-  }
-  
-  function getStageClassName(stage) {
-    // Stage 1: Data Collection - Always complete
-    if (stage === 1) return "border-green-500 bg-green-50";
-    
-    // Stage 2: Provider Selection
-    if (stage === 2) {
-      if (quotes.length > 0) return "border-green-500 bg-green-50";
-      return "border-muted bg-muted/10";
-    }
-    
-    // Stage 3: Voting
-    if (stage === 3) {
-      if (votingComplete) return "border-green-500 bg-green-50";
-      if (votingOpen) return "border-amber-500 bg-amber-50";
-      return "border-muted bg-muted/10";
-    }
-    
-    // Stage 4: Payment
-    if (stage === 4) {
-      if (votingComplete) return "border-amber-500 bg-amber-50";
-      return "border-muted bg-muted/10";
-    }
-    
-    return "border-muted bg-muted/10";
-  }
-};
-
-export default CostSharing;
