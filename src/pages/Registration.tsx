@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, User, Mail, Lock, Loader2, Building2, MapPin, CheckCircle, AlertCircle, Phone } from 'lucide-react';
+import { UserPlus, User, Mail, Lock, Loader2, Building2, MapPin, CheckCircle, AlertCircle, Phone, CreditCard } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
