@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -310,6 +311,43 @@ const CostSharing = () => {
     ? calculateUserShare(userMonthlyAverage, averageMonthlyUsage, winningQuote.totalCost)
     : 0;
 
+  // Helper function to determine installation stage percentage
+  const getStagePercentage = () => {
+    if (votingComplete) return 75; // Payment stage
+    if (votingOpen) return 50; // Voting stage
+    if (quotes.length > 0) return 40; // Provider quotes received
+    if (selectedCommunity) return 25; // Data collection complete
+    return 0;
+  };
+
+  // Helper function to determine class for each stage card
+  const getStageClassName = (stage) => {
+    let className = '';
+    
+    if (stage === 1) {
+      // Data Collection - Always complete if we're on this page
+      className = 'border-green-500 bg-green-50';
+    } else if (stage === 2) {
+      // Provider Selection
+      className = quotes.length > 0 
+        ? 'border-green-500 bg-green-50' 
+        : 'border-gray-200';
+    } else if (stage === 3) {
+      // Community Voting
+      className = votingComplete 
+        ? 'border-green-500 bg-green-50' 
+        : votingOpen 
+          ? 'border-blue-500 bg-blue-50' 
+          : 'border-gray-200';
+    } else if (stage === 4) {
+      // Payment
+      className = votingComplete 
+        ? 'border-blue-500 bg-blue-50' 
+        : 'border-gray-200';
+    }
+    
+    return className;
+  };
   
   return (
     <div className="min-h-screen py-16">
@@ -336,7 +374,6 @@ const CostSharing = () => {
               </CardContent>
             </Card>
           ) : (
-            
             <>
               {/* Community Selection */}
               <Card className="mb-8">
@@ -742,7 +779,6 @@ const CostSharing = () => {
                   
                   {/* Payment Tab */}
                   <TabsContent value="payment">
-                    
                     <Card>
                       <CardHeader>
                         <CardTitle>Solar Installation Payment</CardTitle>
@@ -837,3 +873,69 @@ const CostSharing = () => {
                                         <RadioGroup defaultValue="upi" className="space-y-4">
                                           <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="upi" id="upi" />
+                                            <Label htmlFor="upi" className="flex items-center">
+                                              <Phone className="h-4 w-4 mr-2 text-green-600" />
+                                              UPI Payment
+                                            </Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="credit_card" id="credit_card" />
+                                            <Label htmlFor="credit_card" className="flex items-center">
+                                              <CreditCard className="h-4 w-4 mr-2 text-blue-600" />
+                                              Credit Card
+                                            </Label>
+                                          </div>
+                                        </RadioGroup>
+                                        
+                                        <div className="space-y-2">
+                                          <Label htmlFor="amount">Amount</Label>
+                                          <Input 
+                                            id="amount" 
+                                            value={`$${userShareAmount.toLocaleString()}`} 
+                                            readOnly 
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <DialogFooter>
+                                        <Button 
+                                          type="submit" 
+                                          onClick={() => makePayment('upi', userShareAmount)}
+                                          disabled={loading.payment}
+                                        >
+                                          {loading.payment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                          Complete Payment
+                                        </Button>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-8 text-center">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
+                            <h3 className="text-xl font-semibold mb-2">Voting Not Complete</h3>
+                            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                              The community must complete the voting process to select a provider before payments can be made.
+                            </p>
+                            <Button variant="outline" onClick={() => setActiveTab('overview')}>
+                              Return to Overview
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </>
+          )}
+        </div>
+      </Section>
+    </div>
+  );
+};
+
+export default CostSharing;
