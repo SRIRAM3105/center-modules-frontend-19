@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -880,4 +881,109 @@ const Registration = () => {
                     <img 
                       src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80" 
                       alt="Community meeting" 
-                      className="object-
+                      className="object-cover w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-4 text-white">
+                      <h3 className="text-lg font-medium">Find Local Communities</h3>
+                      <p className="text-sm opacity-90">Join forces with neighbors for solar power</p>
+                    </div>
+                  </div>
+                  <FormField
+                    control={browseCommunityForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Your Location</FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <Input placeholder="Enter city or area" className="pl-10" {...field} />
+                          </FormControl>
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    type="submit" 
+                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                    disabled={isLoading.browse}
+                  >
+                    {isLoading.browse && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Find Communities
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
+          </Card>
+
+          <Card className="shadow-soft animate-scale-in [animation-delay:200ms]">
+            <CardHeader>
+              <CardTitle>Start Your Own Community</CardTitle>
+              <CardDescription>
+                Create a new solar community and invite others to join.
+              </CardDescription>
+            </CardHeader>
+            <Form {...createCommunityForm}>
+              <form onSubmit={createCommunityForm.handleSubmit(onCreateCommunitySubmit)}>
+                <CardContent className="space-y-4">
+                  <div className="aspect-video relative rounded-lg overflow-hidden">
+                    <img 
+                      src="https://images.unsplash.com/photo-1605901309584-818e25960a8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1980&q=80" 
+                      alt="Solar panels" 
+                      className="object-cover w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-4 text-white">
+                      <h3 className="text-lg font-medium">Create a Community</h3>
+                      <p className="text-sm opacity-90">Lead the solar revolution in your area</p>
+                    </div>
+                  </div>
+                  <FormField
+                    control={createCommunityForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Community Name</FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <Input placeholder="Enter a name for your community" className="pl-10" {...field} />
+                          </FormControl>
+                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="px-4 py-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      After creating your community, you'll be able to invite members, 
+                      set community goals, and work together towards a sustainable future.
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    type="submit" 
+                    className="w-full button-animation bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600"
+                    disabled={isLoading.create}
+                  >
+                    {isLoading.create && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Users className="h-4 w-4 mr-2" />
+                    Create Community
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
+          </Card>
+        </div>
+      </Section>
+    </div>
+  );
+};
+
+export default Registration;
