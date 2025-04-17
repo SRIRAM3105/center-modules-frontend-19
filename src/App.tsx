@@ -15,7 +15,6 @@ import CostSharing from "@/pages/CostSharing";
 import Payment from "@/pages/Payment";
 import Monitoring from "@/pages/Monitoring";
 import NotFound from "@/pages/NotFound";
-import Presentation from "@/pages/Presentation";
 import ProviderDashboard from "@/pages/ProviderDashboard";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -37,7 +36,6 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/registration" element={<Registration />} />
-              <Route path="/presentation" element={<Presentation />} />
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>

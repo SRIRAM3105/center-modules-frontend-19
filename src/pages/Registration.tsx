@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/hooks/use-toast';
-import { User, UserRole } from '@/types/user'; // Ensure you have a user type defined
+import { User, UserRole, RegistrationData } from '@/types/user';
 
 const Registration = () => {
   const { login, signup, isAuthenticated } = useAuth();
@@ -271,7 +271,7 @@ const Registration = () => {
                     </CardContent>
                     <CardFooter>
                       <Button 
-                        className="w-full bg-primary-purple hover:bg-secondary-purple" 
+                        className="w-full bg-primary-purple text-white hover:bg-secondary-purple" 
                         type="submit" 
                         disabled={loading}
                       >
@@ -318,7 +318,7 @@ const Registration = () => {
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4">
                       <Button 
-                        className="w-full bg-primary-purple hover:bg-secondary-purple" 
+                        className="w-full bg-primary-purple text-white hover:bg-secondary-purple" 
                         type="submit" 
                         disabled={loginLoading}
                       >
