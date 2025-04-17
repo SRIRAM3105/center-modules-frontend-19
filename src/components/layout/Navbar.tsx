@@ -63,10 +63,10 @@ export const Navbar: React.FC = () => {
             className="flex items-center space-x-2 text-foreground"
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-solar-400 to-eco-400 flex items-center justify-center">
-              <span className="sr-only">Solar Community</span>
+              <span className="sr-only">Ray Unity</span>
               <Sun className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-lg hidden sm:inline-block">SolarCommunity</span>
+            <span className="font-semibold text-lg hidden sm:inline-block">Ray Unity</span>
           </Link>
 
           {/* Desktop Navigation */}

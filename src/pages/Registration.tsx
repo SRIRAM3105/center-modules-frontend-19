@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -6,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/hooks/use-toast';
+import { User, UserRole } from '@/types/user'; // Ensure you have a user type defined
 
 const Registration = () => {
   const { login, signup, isAuthenticated } = useAuth();
@@ -38,12 +40,45 @@ const Registration = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  const validateEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Comprehensive validation
+    if (!firstName || !lastName) {
+      toast({
+        title: "Incomplete Information",
+        description: "Please provide your first and last name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!validateEmail(signupEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (signupPassword.length < 8) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 8 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (signupPassword !== confirmPassword) {
       toast({
-        title: "Passwords don't match",
+        title: "Passwords Don't Match",
         description: "Please make sure your passwords match.",
         variant: "destructive"
       });
@@ -52,15 +87,13 @@ const Registration = () => {
     
     setLoading(true);
     
-    // Build roles array based on isProvider checkbox
-    const roles = isProvider ? ['ROLE_USER', 'ROLE_PROVIDER'] : ['ROLE_USER'];
-    
-    // Generate a username from email
-    const username = signupEmail.split('@')[0];
-    
     try {
+      // Determine roles based on provider status
+      const roles: UserRole[] = isProvider 
+        ? ['ROLE_USER', 'ROLE_PROVIDER'] 
+        : ['ROLE_USER'];
+      
       const result = await signup({
-        username,
         email: signupEmail,
         password: signupPassword,
         firstName,
@@ -71,23 +104,20 @@ const Registration = () => {
       
       if (result.success) {
         toast({
-          title: "Registration Successful",
-          description: "Your account has been created successfully!"
+          title: "Welcome to Ray Unity!",
+          description: "Your account has been created successfully."
         });
         
-        // If the user is a provider, redirect them to the provider dashboard
-        if (isProvider) {
-          navigate('/provider-dashboard');
-        } else {
-          // Otherwise, redirect to the community page
-          navigate('/community');
-        }
+        // Redirect based on user type
+        navigate(isProvider ? '/provider-dashboard' : '/community');
       }
     } catch (error) {
       console.error('Signup error:', error);
       toast({
         title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Something went wrong during registration.",
+        description: error instanceof Error 
+          ? error.message 
+          : "Something went wrong. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -103,28 +133,24 @@ const Registration = () => {
       const result = await login(loginEmail, loginPassword);
       
       if (result.success) {
-        // Check if user is a provider to redirect them accordingly
-        // We'll need to check the roles from the auth context after login
+        // Redirect based on user roles
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const isUserProvider = user.roles && user.roles.includes('ROLE_PROVIDER');
         
-        if (isUserProvider) {
-          navigate('/provider-dashboard');
-        } else {
-          navigate('/community');
-        }
-      } else {
         toast({
-          title: "Login Failed",
-          description: result.error || "Invalid credentials. Please try again.",
-          variant: "destructive"
+          title: "Login Successful",
+          description: "Welcome back to Ray Unity!"
         });
+
+        navigate(isUserProvider ? '/provider-dashboard' : '/community');
       }
     } catch (error) {
       console.error('Login error:', error);
       toast({
         title: "Login Failed",
-        description: error instanceof Error ? error.message : "Something went wrong during login.",
+        description: error instanceof Error 
+          ? error.message 
+          : "Invalid credentials. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -133,24 +159,26 @@ const Registration = () => {
   };
 
   return (
-    <div className="min-h-screen pt-36 pb-20">
+    <div className="min-h-screen pt-36 pb-20 bg-gradient-to-br from-soft-purple to-soft-gray">
       <Section>
         <div className="flex flex-col items-center justify-center">
           <div className="w-full max-w-md">
-            <h1 className="text-4xl font-bold text-center mb-8">Welcome to Ray Unity</h1>
+            <h1 className="text-4xl font-bold text-center mb-8 text-dark-purple">
+              Welcome to Ray Unity
+            </h1>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-soft-gray">
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 <TabsTrigger value="login">Login</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signup">
-                <Card>
+                <Card className="shadow-xl border-soft-purple/20">
                   <CardHeader>
-                    <CardTitle>Create an Account</CardTitle>
+                    <CardTitle className="text-primary-purple">Create Your Ray Unity Account</CardTitle>
                     <CardDescription>
-                      Join Ray Unity and start your community solar journey today
+                      Join our community solar platform and make a difference
                     </CardDescription>
                   </CardHeader>
                   <form onSubmit={handleSignup}>
@@ -163,6 +191,7 @@ const Registration = () => {
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
                             required
+                            className="border-soft-purple/50 focus:ring-primary-purple"
                           />
                         </div>
                         
@@ -173,6 +202,7 @@ const Registration = () => {
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
                             required
+                            className="border-soft-purple/50 focus:ring-primary-purple"
                           />
                         </div>
                       </div>
@@ -185,6 +215,7 @@ const Registration = () => {
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
                           required
+                          className="border-soft-purple/50 focus:ring-primary-purple"
                         />
                       </div>
                       
@@ -196,6 +227,7 @@ const Registration = () => {
                           value={phoneNumber}
                           onChange={(e) => setPhoneNumber(e.target.value)}
                           required
+                          className="border-soft-purple/50 focus:ring-primary-purple"
                         />
                       </div>
                       
@@ -207,6 +239,7 @@ const Registration = () => {
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
                           required
+                          className="border-soft-purple/50 focus:ring-primary-purple"
                         />
                       </div>
                       
@@ -218,6 +251,7 @@ const Registration = () => {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
+                          className="border-soft-purple/50 focus:ring-primary-purple"
                         />
                       </div>
                       
@@ -236,7 +270,11 @@ const Registration = () => {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button className="w-full" type="submit" disabled={loading}>
+                      <Button 
+                        className="w-full bg-primary-purple hover:bg-secondary-purple" 
+                        type="submit" 
+                        disabled={loading}
+                      >
                         {loading ? "Creating account..." : "Create Account"}
                       </Button>
                     </CardFooter>
@@ -245,11 +283,11 @@ const Registration = () => {
               </TabsContent>
               
               <TabsContent value="login">
-                <Card>
+                <Card className="shadow-xl border-soft-purple/20">
                   <CardHeader>
-                    <CardTitle>Login to Your Account</CardTitle>
+                    <CardTitle className="text-primary-purple">Login to Ray Unity</CardTitle>
                     <CardDescription>
-                      Enter your email and password to access your account
+                      Access your community solar dashboard
                     </CardDescription>
                   </CardHeader>
                   <form onSubmit={handleLogin}>
@@ -262,6 +300,7 @@ const Registration = () => {
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
                           required
+                          className="border-soft-purple/50 focus:ring-primary-purple"
                         />
                       </div>
                       
@@ -273,11 +312,16 @@ const Registration = () => {
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
                           required
+                          className="border-soft-purple/50 focus:ring-primary-purple"
                         />
                       </div>
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4">
-                      <Button className="w-full" type="submit" disabled={loginLoading}>
+                      <Button 
+                        className="w-full bg-primary-purple hover:bg-secondary-purple" 
+                        type="submit" 
+                        disabled={loginLoading}
+                      >
                         {loginLoading ? "Logging in..." : "Login"}
                       </Button>
                     </CardFooter>
