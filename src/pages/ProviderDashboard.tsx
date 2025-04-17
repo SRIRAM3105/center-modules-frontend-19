@@ -245,7 +245,7 @@ const ProviderDashboard = () => {
                                   {key.replace(/([A-Z])/g, ' $1')
                                     .replace(/^./, str => str.toUpperCase())}:
                                 </span>
-                                <p className="font-medium">{value}</p>
+                                <p className="font-medium">{String(value)}</p>
                               </div>
                             ))}
                           </div>
@@ -342,7 +342,7 @@ const ProviderDashboard = () => {
                           <div>
                             <CardTitle>{project.communityName}</CardTitle>
                             <CardDescription className="flex items-center mt-1">
-                              <Buildings className="h-4 w-4 mr-1" />
+                              <Building className="h-4 w-4 mr-1" />
                               {project.location}
                             </CardDescription>
                           </div>
