@@ -117,27 +117,6 @@ export const authAPI = {
     } catch (error) {
       return handleApiError(error, 'updating profile');
     }
-  },
-  
-  resetPassword: async (email) => {
-    try {
-      const response = await apiClient.post('/auth/reset-password', { email });
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, 'resetting password');
-    }
-  },
-  
-  confirmResetPassword: async (token, newPassword) => {
-    try {
-      const response = await apiClient.post('/auth/confirm-reset-password', { 
-        token, 
-        newPassword 
-      });
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, 'confirming password reset');
-    }
   }
 };
 
@@ -208,6 +187,42 @@ export const providerAPI = {
     }
   },
   
+  getQuoteRequests: async () => {
+    try {
+      const response = await apiClient.get('/providers/quotes/requests');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching quote requests');
+    }
+  },
+  
+  submitQuote: async (requestId, quoteData) => {
+    try {
+      const response = await apiClient.post(`/providers/quotes/${requestId}/submit`, quoteData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting quote');
+    }
+  },
+  
+  getActiveProjects: async () => {
+    try {
+      const response = await apiClient.get('/providers/projects/active');
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching active projects');
+    }
+  },
+  
+  updateInstallationProgress: async (projectId, progressData) => {
+    try {
+      const response = await apiClient.put(`/providers/projects/${projectId}/progress`, progressData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'updating installation progress');
+    }
+  },
+  
   submitVote: async (communityId, providerVote) => {
     try {
       const response = await apiClient.post(`/communities/${communityId}/votes`, providerVote);
@@ -223,6 +238,15 @@ export const providerAPI = {
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching voting results');
+    }
+  },
+  
+  selectWinningProvider: async (providerId) => {
+    try {
+      const response = await apiClient.post(`/providers/${providerId}/select-winner`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'selecting winning provider');
     }
   }
 };

@@ -16,6 +16,7 @@ import Payment from "@/pages/Payment";
 import Monitoring from "@/pages/Monitoring";
 import NotFound from "@/pages/NotFound";
 import Presentation from "@/pages/Presentation";
+import ProviderDashboard from "@/pages/ProviderDashboard";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/cost-sharing" element={<CostSharing />} />
                 <Route path="/payment" element={<Payment />} />
                 <Route path="/monitoring" element={<Monitoring />} />
+                <Route path="/provider-dashboard" element={<ProviderDashboard />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />

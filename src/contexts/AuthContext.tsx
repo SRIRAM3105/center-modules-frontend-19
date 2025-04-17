@@ -1,188 +1,228 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { authAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
-type User = {
+interface User {
   id: number;
   username: string;
   email: string;
   roles: string[];
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-};
+}
 
-type AuthContextType = {
-  isAuthenticated: boolean;
+interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<any>;
-  logout: () => void;
-  resetPassword: (email: string) => Promise<any>;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<any>;
   signup: (userData: any) => Promise<any>;
-};
+  logout: () => void;
+  error: string | null;
+}
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  isAuthenticated: false,
+  login: async () => ({}),
+  signup: async () => ({}),
+  logout: () => {},
+  error: null
+});
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+export const useAuth = () => useContext(AuthContext);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Check if the user is already logged in on initial load
   useEffect(() => {
-    // Check if user is logged in on mount
     const token = localStorage.getItem('token');
+    
     if (token) {
-      setIsAuthenticated(true);
-      // Fetch user data when we have a token
-      authAPI.getProfile()
-        .then(userData => {
-          if (!userData.error) {
-            setUser(userData);
-          } else {
-            // If profile fetch fails with error, log the user out
-            logout();
-          }
-        })
-        .catch(error => {
-          console.error("Error fetching user profile:", error);
-          // If profile fetch fails, we should log the user out
-          logout();
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+      fetchUserProfile();
     } else {
       setLoading(false);
     }
   }, []);
 
+  // Fetch the user profile from the API
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const userData = await authAPI.getProfile();
+      
+      if (userData.error) {
+        setError(userData.message);
+        logout(); // Clear invalid tokens
+      } else {
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setError('Failed to fetch user profile');
+      logout(); // Clear invalid tokens
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Login function
+  const login = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await authAPI.login({ email, password });
+      
+      if (response.error) {
+        setError(response.message);
+        toast({
+          title: "Login Failed",
+          description: response.message || "Invalid email or password",
+          variant: "destructive",
+        });
+        return { success: false, error: response.message };
+      }
+      
+      // Set the token in localStorage
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        
+        // Set the user data
+        setUser({
+          id: response.id,
+          username: response.username,
+          email: response.email,
+          roles: response.roles
+        });
+        
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        
+        return { success: true };
+      } else {
+        setError('Invalid response from server');
+        toast({
+          title: "Login Failed",
+          description: "Invalid response from server",
+          variant: "destructive",
+        });
+        return { success: false, error: 'Invalid response from server' };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during login';
+      setError(errorMessage);
+      
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Signup function
   const signup = async (userData: any) => {
     try {
-      console.log("Signup with user data:", userData);
+      setLoading(true);
+      setError(null);
+      
       const response = await authAPI.signup(userData);
       
       if (response.error) {
+        setError(response.message);
         toast({
-          title: "Signup failed",
-          description: response.message || "There was an error creating your account. Please try again.",
+          title: "Signup Failed",
+          description: response.message || "Could not create account",
           variant: "destructive",
         });
-        throw new Error(response.message || "Signup failed");
+        return { success: false, error: response.message };
       }
       
-      localStorage.setItem('token', response.token);
-      setIsAuthenticated(true);
-      setUser({
-        id: response.id,
-        username: response.username,
-        email: response.email,
-        roles: response.roles || ['ROLE_USER']
-      });
+      // Set the token in localStorage if it's returned
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        
+        // Set the user data
+        setUser({
+          id: response.id,
+          username: response.username,
+          email: response.email,
+          roles: response.roles
+        });
+        
+        toast({
+          title: "Signup Successful",
+          description: "Your account has been created!",
+        });
+        
+        return { success: true };
+      } else {
+        // If account was created but no automatic login
+        toast({
+          title: "Signup Successful",
+          description: "Please login with your new account",
+        });
+        
+        return { success: true, requireLogin: true };
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during signup';
+      setError(errorMessage);
       
       toast({
-        title: "Account created",
-        description: "Your account has been successfully created!",
+        title: "Signup Failed",
+        description: errorMessage,
+        variant: "destructive",
       });
       
-      return response;
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      throw error;
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 
-  const login = async (username: string, password: string) => {
-    try {
-      console.log("Login attempt with:", { username, password });
-      const response = await authAPI.login({ username, password });
-      
-      if (response.error) {
-        toast({
-          title: "Login failed",
-          description: response.message || "Invalid username or password. Please try again.",
-          variant: "destructive",
-        });
-        throw new Error(response.message || "Login failed");
-      }
-      
-      localStorage.setItem('token', response.token);
-      setIsAuthenticated(true);
-      setUser({
-        id: response.id,
-        username: response.username,
-        email: response.email,
-        roles: response.roles || ['ROLE_USER']
-      });
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      return response;
-    } catch (error: any) {
-      console.error("Login error:", error);
-      throw error;
-    }
-  };
-
+  // Logout function
   const logout = () => {
     localStorage.removeItem('token');
-    setIsAuthenticated(false);
     setUser(null);
+    authAPI.logout();
+    
     toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
+      title: "Logged Out",
+      description: "You have been successfully logged out",
     });
   };
 
-  const resetPassword = async (email: string) => {
-    try {
-      const response = await authAPI.resetPassword(email);
-      
-      if (response.error) {
-        toast({
-          title: "Password reset failed",
-          description: response.message || "Could not send password reset email. Please try again.",
-          variant: "destructive",
-        });
-        throw new Error(response.message || "Password reset failed");
-      }
-      
-      toast({
-        title: "Password reset email sent",
-        description: "Please check your email for instructions to reset your password.",
-      });
-      
-      return response;
-    } catch (error: any) {
-      console.error("Password reset error:", error);
-      throw error;
-    }
+  const value = {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    login,
+    signup,
+    logout,
+    error
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      user, 
-      loading, 
-      login, 
-      logout, 
-      resetPassword,
-      signup 
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };
