@@ -10,7 +10,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { providerAPI } from '@/services/api';
-import { CalendarClock, Check, DollarSign, Buildings, Users, MessageSquare, Clipboard, BarChart } from 'lucide-react';
+import { 
+  CalendarClock, 
+  Check, 
+  DollarSign, 
+  Building,  // Changed from Buildings to Building
+  Users, 
+  MessageSquare, 
+  Clipboard, 
+  BarChart 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -122,7 +131,7 @@ const ProviderDashboard = () => {
     // fetchProjects();
   }, [user, navigate, toast]);
 
-  const handleSubmitQuote = (requestId) => {
+  const handleSubmitQuote = (requestId: string) => {
     const amount = parseFloat(quoteAmount);
     if (isNaN(amount) || amount <= 0) {
       toast({
@@ -192,14 +201,14 @@ const ProviderDashboard = () => {
             <TabsContent value="quote-requests" className="animate-fade-in">
               <div className="grid gap-6">
                 {quoteRequests.length > 0 ? (
-                  quoteRequests.map((request, index) => (
+                  quoteRequests.map((request) => (
                     <Card key={request.id} className="shadow-md overflow-hidden">
                       <CardHeader className="bg-muted/50">
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle>{request.communityName}</CardTitle>
                             <CardDescription className="flex items-center mt-1">
-                              <Buildings className="h-4 w-4 mr-1" />
+                              <Building className="h-4 w-4 mr-1" /> {/* Corrected icon name */}
                               {request.location}
                             </CardDescription>
                           </div>
