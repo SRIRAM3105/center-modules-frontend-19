@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { BarChart2, Home, Sun, DollarSign } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { dataCollectionAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,13 +23,64 @@ const DataCollection = () => {
   const [roofType, setRoofType] = useState('');
   const [address, setAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({
+    monthlyUsage: '',
+    monthlyBill: '',
+    roofType: '',
+    address: ''
+  });
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {
+      monthlyUsage: '',
+      monthlyBill: '',
+      roofType: '',
+      address: ''
+    };
+    
+    let isValid = true;
+    
+    // Validate monthly usage
+    if (!monthlyUsage) {
+      newErrors.monthlyUsage = 'Monthly usage is required';
+      isValid = false;
+    } else if (Number(monthlyUsage) < 0) {
+      newErrors.monthlyUsage = 'Energy consumption cannot be negative';
+      isValid = false;
+    }
+    
+    // Validate monthly bill
+    if (!monthlyBill) {
+      newErrors.monthlyBill = 'Monthly bill is required';
+      isValid = false;
+    } else if (Number(monthlyBill) < 0) {
+      newErrors.monthlyBill = 'Bill amount cannot be negative';
+      isValid = false;
+    }
+    
+    // Validate roof type
+    if (!roofType) {
+      newErrors.roofType = 'Roof type is required';
+      isValid = false;
+    }
+    
+    // Validate address
+    if (!address) {
+      newErrors.address = 'Address is required';
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
 
   // Handle form submission
   const handleCalculateSolarPlan = async () => {
-    if (!monthlyUsage || !monthlyBill || !roofType || !address) {
+    if (!validateForm()) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
+        title: "Validation Error",
+        description: "Please fix the errors in the form",
         variant: "destructive",
       });
       return;
@@ -48,8 +98,31 @@ const DataCollection = () => {
         address
       };
 
-      // Submit to backend - adding the second parameter
-      const result = await dataCollectionAPI.calculateSolarPlan('temp-address-id', energyData);
+      // First save address
+      const addressResponse = await dataCollectionAPI.submitAddress({
+        street: address,
+        city: "Sample City", // These would normally come from a more detailed form
+        state: "Sample State",
+        zipCode: "12345",
+        monthlyUsage: Number(monthlyUsage),
+        monthlyBill: Number(monthlyBill),
+        homeSize: homeSize[0],
+        roofType
+      });
+      
+      if (addressResponse.error) {
+        throw new Error(addressResponse.message);
+      }
+      
+      // Use the new address ID to calculate solar plan
+      const result = await dataCollectionAPI.calculateSolarPlan(
+        addressResponse.id || 'temp-address-id', 
+        energyData
+      );
+      
+      if (result.error) {
+        throw new Error(result.message);
+      }
       
       // Store result in localStorage for access in provider matching page
       localStorage.setItem('solarPlanData', JSON.stringify(result));
@@ -66,7 +139,7 @@ const DataCollection = () => {
       console.error('Error calculating solar plan:', error);
       toast({
         title: "Calculation Failed",
-        description: "There was an error calculating your solar plan. Please try again.",
+        description: error.message || "There was an error calculating your solar plan. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -127,8 +200,17 @@ const DataCollection = () => {
                       type="number" 
                       placeholder="e.g. 850" 
                       value={monthlyUsage}
-                      onChange={(e) => setMonthlyUsage(e.target.value)}
+                      onChange={(e) => {
+                        setMonthlyUsage(e.target.value);
+                        if (errors.monthlyUsage) {
+                          setErrors({...errors, monthlyUsage: ''});
+                        }
+                      }}
+                      className={errors.monthlyUsage ? "border-red-500" : ""}
                     />
+                    {errors.monthlyUsage && (
+                      <p className="text-sm text-red-500">{errors.monthlyUsage}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="average-bill">Average Monthly Bill (₹)</Label>
@@ -137,8 +219,17 @@ const DataCollection = () => {
                       type="number" 
                       placeholder="e.g. 7,500" 
                       value={monthlyBill}
-                      onChange={(e) => setMonthlyBill(e.target.value)}
+                      onChange={(e) => {
+                        setMonthlyBill(e.target.value);
+                        if (errors.monthlyBill) {
+                          setErrors({...errors, monthlyBill: ''});
+                        }
+                      }}
+                      className={errors.monthlyBill ? "border-red-500" : ""}
                     />
+                    {errors.monthlyBill && (
+                      <p className="text-sm text-red-500">{errors.monthlyBill}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Home Size (sq ft)</Label>
@@ -160,8 +251,19 @@ const DataCollection = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="roof-type">Roof Type</Label>
-                  <Select value={roofType} onValueChange={setRoofType}>
-                    <SelectTrigger id="roof-type">
+                  <Select 
+                    value={roofType} 
+                    onValueChange={(value) => {
+                      setRoofType(value);
+                      if (errors.roofType) {
+                        setErrors({...errors, roofType: ''});
+                      }
+                    }}
+                  >
+                    <SelectTrigger 
+                      id="roof-type"
+                      className={errors.roofType ? "border-red-500" : ""}
+                    >
                       <SelectValue placeholder="Select roof type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -172,6 +274,9 @@ const DataCollection = () => {
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.roofType && (
+                    <p className="text-sm text-red-500">{errors.roofType}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -180,8 +285,17 @@ const DataCollection = () => {
                     id="address" 
                     placeholder="Enter your address" 
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      if (errors.address) {
+                        setErrors({...errors, address: ''});
+                      }
+                    }}
+                    className={errors.address ? "border-red-500" : ""}
                   />
+                  {errors.address && (
+                    <p className="text-sm text-red-500">{errors.address}</p>
+                  )}
                 </div>
               </CardContent>
               <CardFooter>

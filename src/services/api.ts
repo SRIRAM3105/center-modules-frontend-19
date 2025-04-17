@@ -1,7 +1,8 @@
+
 import axios from 'axios';
 
 // Base URL for all API calls - using a dynamic URL that works in both development and production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // Configure axios defaults
 const apiClient = axios.create({
@@ -73,8 +74,14 @@ export const authAPI = {
       console.log("API Signup response:", response.data);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify({
+          id: response.data.id,
+          username: response.data.username,
+          email: response.data.email,
+          roles: response.data.roles
+        }));
       }
-      return response.data;
+      return { success: true, ...response.data };
     } catch (error) {
       console.error("Error in signup API call:", error);
       return handleApiError(error, 'signup');
@@ -88,8 +95,14 @@ export const authAPI = {
       console.log("API Login response:", response.data);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify({
+          id: response.data.id,
+          username: response.data.username,
+          email: response.data.email,
+          roles: response.data.roles
+        }));
       }
-      return response.data;
+      return { success: true, ...response.data };
     } catch (error) {
       console.error("Error in login API call:", error);
       return handleApiError(error, 'login');
@@ -98,6 +111,7 @@ export const authAPI = {
   
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     return { success: true };
   },
   
@@ -116,6 +130,27 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       return handleApiError(error, 'updating profile');
+    }
+  },
+  
+  resetPassword: async (email) => {
+    try {
+      const response = await apiClient.post('/auth/reset-password', { email });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'resetting password');
+    }
+  },
+  
+  confirmResetPassword: async (token, newPassword) => {
+    try {
+      const response = await apiClient.post('/auth/confirm-reset-password', { 
+        token, 
+        newPassword 
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'confirming password reset');
     }
   }
 };
@@ -318,6 +353,24 @@ export const communityAPI = {
     } catch (error) {
       return handleApiError(error, 'updating allocation');
     }
+  },
+  
+  submitVote: async (communityId, providerId) => {
+    try {
+      const response = await apiClient.post(`/communities/${communityId}/votes`, { providerId });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'submitting vote');
+    }
+  },
+  
+  getVotingResults: async (communityId) => {
+    try {
+      const response = await apiClient.get(`/communities/${communityId}/votes`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching voting results');
+    }
   }
 };
 
@@ -491,6 +544,15 @@ export const installationAPI = {
     } catch (error) {
       return handleApiError(error, 'submitting feedback');
     }
+  },
+  
+  updateInstallationProgress: async (installationId, progressData) => {
+    try {
+      const response = await apiClient.put(`/installations/${installationId}/progress`, progressData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'updating installation progress');
+    }
   }
 };
 
@@ -531,6 +593,17 @@ export const monitoringAPI = {
       return response.data;
     } catch (error) {
       return handleApiError(error, 'fetching energy data');
+    }
+  },
+  
+  getSystemPerformance: async (installationId, period = 'monthly') => {
+    try {
+      const response = await apiClient.get(`/monitoring/performance/${installationId}`, {
+        params: { period }
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching system performance');
     }
   }
 };

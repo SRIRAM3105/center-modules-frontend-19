@@ -1,4 +1,3 @@
-
 package com.communitysolar.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +41,32 @@ public class DataCollectionController {
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("Error: User is not found."));
         
+        // Validate address data
+        if (addressRequest.getStreet() == null || addressRequest.getStreet().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Street address is required."));
+        }
+        
+        if (addressRequest.getCity() == null || addressRequest.getCity().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: City is required."));
+        }
+        
+        if (addressRequest.getState() == null || addressRequest.getState().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: State is required."));
+        }
+        
+        if (addressRequest.getZipCode() == null || addressRequest.getZipCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Zip code is required."));
+        }
+        
+        // Validate energy data
+        if (addressRequest.getMonthlyUsage() != null && addressRequest.getMonthlyUsage() < 0) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Monthly usage cannot be negative."));
+        }
+        
+        if (addressRequest.getMonthlyBill() != null && addressRequest.getMonthlyBill() < 0) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Monthly bill cannot be negative."));
+        }
+        
         Address address = new Address();
         address.setUser(user);
         address.setStreet(addressRequest.getStreet());
@@ -82,6 +107,24 @@ public class DataCollectionController {
     public ResponseEntity<?> calculateSolarPlan(@PathVariable Long addressId, @RequestBody Map<String, Object> energyData) {
         return addressRepository.findById(addressId)
                 .map(address -> {
+                    // Extract data from the energy data
+                    Double monthlyUsage = null;
+                    if (energyData.containsKey("monthlyUsage")) {
+                        if (energyData.get("monthlyUsage") instanceof Integer) {
+                            monthlyUsage = ((Integer) energyData.get("monthlyUsage")).doubleValue();
+                        } else if (energyData.get("monthlyUsage") instanceof Double) {
+                            monthlyUsage = (Double) energyData.get("monthlyUsage");
+                        }
+                    }
+                    
+                    // Check for zero consumption
+                    if (monthlyUsage != null && monthlyUsage <= 0) {
+                        Map<String, Object> errorResponse = new HashMap<>();
+                        errorResponse.put("message", "Insufficient data to generate a solar plan.");
+                        errorResponse.put("error", "Energy consumption must be greater than zero.");
+                        return ResponseEntity.badRequest().body(errorResponse);
+                    }
+                    
                     // Simulate calculating a solar plan based on address and energy data
                     SolarPlan solarPlan = generateSolarPlan(address, energyData);
                     SolarPlan savedPlan = solarPlanRepository.save(solarPlan);
@@ -89,26 +132,20 @@ public class DataCollectionController {
                     return ResponseEntity.ok(savedPlan);
                 })
                 .orElseGet(() -> {
-                    // If addressId doesn't exist, create a temp solar plan for demo purposes
-                    SolarPlan tempPlan = new SolarPlan();
-                    tempPlan.setSystemSizeKw(5.0);
-                    tempPlan.setEstimatedProductionKwh(7500.0);
-                    tempPlan.setPanelCount(15);
-                    tempPlan.setEstimatedCost(600000.0); // ₹6,00,000
-                    tempPlan.setRoiYears(5.5);
-                    
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("solarPlan", tempPlan);
-                    response.put("message", "Temporary plan generated. Address ID not found.");
-                    
-                    return ResponseEntity.ok(response);
+                    // If addressId doesn't exist, return an error message
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("message", "Address not found.");
+                    errorResponse.put("error", "The specified address ID does not exist.");
+                    return ResponseEntity.badRequest().body(errorResponse);
                 });
     }
     
-    // Utility methods for solar calculations
-    
     private double calculateSolarPotential(Double monthlyUsage, String roofType, Integer homeSize) {
         // Simplified algorithm for demo purposes
+        if (monthlyUsage == null || monthlyUsage <= 0) {
+            return 0.0; // No potential if no usage data
+        }
+        
         double basePotential = monthlyUsage * 0.8; // 80% of current usage
         
         // Adjust based on roof type

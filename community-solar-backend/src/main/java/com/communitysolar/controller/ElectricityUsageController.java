@@ -62,6 +62,24 @@ public class ElectricityUsageController {
                         .body(new MessageResponse("Error: No electricity usage data provided!"));
             }
             
+            // Validate each bill entry for negative values
+            for (Map<String, Object> bill : bills) {
+                double units = ((Number) bill.get("units")).doubleValue();
+                double amount = ((Number) bill.get("amount")).doubleValue();
+                
+                if (units < 0) {
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new MessageResponse("Error: Energy consumption cannot be negative."));
+                }
+                
+                if (amount < 0) {
+                    return ResponseEntity
+                            .badRequest()
+                            .body(new MessageResponse("Error: Bill amount cannot be negative."));
+                }
+            }
+            
             // Save each bill entry as a separate ElectricityUsage record
             List<ElectricityUsage> savedData = bills.stream()
                     .map(bill -> {

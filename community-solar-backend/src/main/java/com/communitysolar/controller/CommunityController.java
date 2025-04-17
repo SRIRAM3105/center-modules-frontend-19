@@ -1,4 +1,3 @@
-
 package com.communitysolar.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,6 +71,15 @@ public class CommunityController {
         
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+        
+        // Validate community data
+        if (communityRequest.getName() == null || communityRequest.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Community name is required"));
+        }
+        
+        if (communityRequest.getLocation() == null || communityRequest.getLocation().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Community location is required"));
+        }
         
         Community community = new Community();
         community.setName(communityRequest.getName());
@@ -206,6 +214,62 @@ public class CommunityController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{communityId}/votes")
+    public ResponseEntity<?> submitProviderVote(
+            @PathVariable Long communityId, 
+            @RequestBody Map<String, Long> voteRequest) {
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        
+        User user = userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("Error: User is not found."));
+        
+        Community community = communityRepository.findById(communityId)
+                .orElseThrow(() -> new RuntimeException("Error: Community not found."));
+        
+        // Check if the user is a member of the community
+        if (!communityMemberRepository.existsByCommunityAndUser(community, user)) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: You must be a member of the community to vote."));
+        }
+        
+        Long providerId = voteRequest.get("providerId");
+        if (providerId == null) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: Provider ID is required for voting."));
+        }
+        
+        // In a real implementation, store the vote in a database
+        // For now, we'll just return a success message
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Vote submitted successfully");
+        response.put("communityId", communityId);
+        response.put("providerId", providerId);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/{communityId}/votes")
+    public ResponseEntity<?> getVotingResults(@PathVariable Long communityId) {
+        // In a real implementation, retrieve actual voting data from the database
+        
+        // For demo purposes, return sample voting results
+        Map<String, Object> votingResults = new HashMap<>();
+        votingResults.put("communityId", communityId);
+        votingResults.put("totalVotes", 12);
+        
+        Map<String, Integer> providerVotes = new HashMap<>();
+        providerVotes.put("Provider 1", 5);
+        providerVotes.put("Provider 2", 4);
+        providerVotes.put("Provider 3", 3);
+        
+        votingResults.put("providerVotes", providerVotes);
+        
+        return ResponseEntity.ok(votingResults);
+    }
+    
     @PutMapping("/{id}/allocation")
     public ResponseEntity<?> updateEnergyAllocation(@PathVariable Long id, @RequestBody Map<String, Object> allocationData) {
         return communityRepository.findById(id)
