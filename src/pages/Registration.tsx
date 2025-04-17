@@ -271,7 +271,7 @@ const Registration = () => {
                     </CardContent>
                     <CardFooter>
                       <Button 
-                        className="w-full bg-primary-purple text-white hover:bg-secondary-purple" 
+                        className="w-full bg-vivid-purple text-white hover:bg-secondary-purple" 
                         type="submit" 
                         disabled={loading}
                       >
@@ -318,7 +318,7 @@ const Registration = () => {
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4">
                       <Button 
-                        className="w-full bg-primary-purple text-white hover:bg-secondary-purple" 
+                        className="w-full bg-vivid-purple text-white hover:bg-secondary-purple" 
                         type="submit" 
                         disabled={loginLoading}
                       >
