@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Section } from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -175,103 +174,10 @@ const Registration = () => {
               
               <TabsContent value="signup">
                 <Card className="shadow-xl border-soft-purple/20">
-                  <CardHeader>
-                    <CardTitle className="text-primary-purple">Create Your Ray Unity Account</CardTitle>
-                    <CardDescription>
-                      Join our community solar platform and make a difference
-                    </CardDescription>
-                  </CardHeader>
                   <form onSubmit={handleSignup}>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName">First Name</Label>
-                          <Input 
-                            id="firstName" 
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            required
-                            className="border-soft-purple/50 focus:ring-primary-purple"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName">Last Name</Label>
-                          <Input 
-                            id="lastName" 
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            required
-                            className="border-soft-purple/50 focus:ring-primary-purple"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="signupEmail">Email</Label>
-                        <Input 
-                          id="signupEmail" 
-                          type="email" 
-                          value={signupEmail}
-                          onChange={(e) => setSignupEmail(e.target.value)}
-                          required
-                          className="border-soft-purple/50 focus:ring-primary-purple"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="phoneNumber">Phone Number</Label>
-                        <Input 
-                          id="phoneNumber" 
-                          type="tel" 
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          required
-                          className="border-soft-purple/50 focus:ring-primary-purple"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="signupPassword">Password</Label>
-                        <Input 
-                          id="signupPassword" 
-                          type="password" 
-                          value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
-                          required
-                          className="border-soft-purple/50 focus:ring-primary-purple"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm Password</Label>
-                        <Input 
-                          id="confirmPassword" 
-                          type="password" 
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          className="border-soft-purple/50 focus:ring-primary-purple"
-                        />
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 mt-4">
-                        <Checkbox 
-                          id="isProvider" 
-                          checked={isProvider}
-                          onCheckedChange={(checked) => setIsProvider(checked as boolean)}
-                        />
-                        <Label 
-                          htmlFor="isProvider" 
-                          className="text-sm font-medium leading-none cursor-pointer"
-                        >
-                          I am a solar provider
-                        </Label>
-                      </div>
-                    </CardContent>
                     <CardFooter>
                       <Button 
-                        className="w-full bg-vivid-purple text-white hover:bg-secondary-purple" 
+                        className="w-full bg-[#8B5CF6] text-white hover:bg-[#7E57C2]" 
                         type="submit" 
                         disabled={loading}
                       >
@@ -284,41 +190,10 @@ const Registration = () => {
               
               <TabsContent value="login">
                 <Card className="shadow-xl border-soft-purple/20">
-                  <CardHeader>
-                    <CardTitle className="text-primary-purple">Login to Ray Unity</CardTitle>
-                    <CardDescription>
-                      Access your community solar dashboard
-                    </CardDescription>
-                  </CardHeader>
                   <form onSubmit={handleLogin}>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="loginEmail">Email</Label>
-                        <Input 
-                          id="loginEmail" 
-                          type="email" 
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
-                          required
-                          className="border-soft-purple/50 focus:ring-primary-purple"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="loginPassword">Password</Label>
-                        <Input 
-                          id="loginPassword" 
-                          type="password" 
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          required
-                          className="border-soft-purple/50 focus:ring-primary-purple"
-                        />
-                      </div>
-                    </CardContent>
                     <CardFooter className="flex flex-col space-y-4">
                       <Button 
-                        className="w-full bg-vivid-purple text-white hover:bg-secondary-purple" 
+                        className="w-full bg-[#8B5CF6] text-white hover:bg-[#7E57C2]" 
                         type="submit" 
                         disabled={loginLoading}
                       >
