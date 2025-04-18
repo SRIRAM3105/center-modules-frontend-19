@@ -15,4 +15,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByUser(User user);
     
     List<Payment> findByCommunity(Community community);
+    
+    List<Payment> findByCommunityAndStatus(Community community, Payment.PaymentStatus status);
+    
+    List<Payment> findByUserAndCommunityAndStatus(User user, Community community, Payment.PaymentStatus status);
 }

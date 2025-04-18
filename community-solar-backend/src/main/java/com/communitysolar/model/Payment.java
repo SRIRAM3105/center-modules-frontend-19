@@ -37,6 +37,15 @@ public class Payment {
 
     @Column(name = "transaction_id")
     private String transactionId;
+    
+    @Column(name = "installment_number")
+    private Integer installmentNumber;
+    
+    @Column(name = "total_installments")
+    private Integer totalInstallments;
+    
+    @Column(name = "original_amount")
+    private Double originalAmount;
 
     public enum PaymentStatus {
         PENDING, COMPLETED, FAILED, REFUNDED

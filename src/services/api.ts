@@ -496,6 +496,42 @@ export const costAPI = {
     }
   },
   
+  getCommunityPayments: async (communityId) => {
+    try {
+      const response = await apiClient.get(`/payments/community/${communityId}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'fetching community payments');
+    }
+  },
+  
+  calculateQuoteSplit: async (quoteData) => {
+    try {
+      const response = await apiClient.post('/payments/calculate-quote-split', quoteData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'calculating quote split');
+    }
+  },
+  
+  createPaymentPlan: async (paymentPlanData) => {
+    try {
+      const response = await apiClient.post('/payments/create-payment-plan', paymentPlanData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'creating payment plan');
+    }
+  },
+  
+  processPayment: async (paymentData) => {
+    try {
+      const response = await apiClient.post('/payments/process-payment', paymentData);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'processing payment');
+    }
+  },
+  
   makePayment: async (paymentData) => {
     try {
       const response = await apiClient.post('/payments', paymentData);
