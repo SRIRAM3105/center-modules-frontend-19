@@ -10,6 +10,7 @@ import com.communitysolar.model.ERole;
 import com.communitysolar.model.Role;
 import com.communitysolar.repository.RoleRepository;
 import com.communitysolar.repository.UserRepository;
+import com.communitysolar.repository.ProviderRepository;
 
 import java.util.Arrays;
 
@@ -23,19 +24,27 @@ public class DatabaseSeeder implements CommandLineRunner {
     private UserRepository userRepository;
     
     @Autowired
+    private ProviderRepository providerRepository;
+    
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
+        // Clear existing data
+        providerRepository.deleteAll();
+        userRepository.deleteAll();
+        roleRepository.deleteAll();
+        
+        System.out.println("Cleared existing data");
+        
         // Initialize roles
-        if (roleRepository.count() == 0) {
-            Role userRole = new Role(ERole.ROLE_USER);
-            Role providerRole = new Role(ERole.ROLE_PROVIDER);
-            Role adminRole = new Role(ERole.ROLE_ADMIN);
-            
-            roleRepository.saveAll(Arrays.asList(userRole, providerRole, adminRole));
-            
-            System.out.println("Roles initialized successfully");
-        }
+        Role userRole = new Role(ERole.ROLE_USER);
+        Role providerRole = new Role(ERole.ROLE_PROVIDER);
+        Role adminRole = new Role(ERole.ROLE_ADMIN);
+        
+        roleRepository.saveAll(Arrays.asList(userRole, providerRole, adminRole));
+        
+        System.out.println("Roles initialized successfully");
     }
 }
