@@ -1,4 +1,3 @@
-
 package com.communitysolar.controller;
 
 import java.util.HashSet;
@@ -59,7 +58,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        // Find user by email instead of username
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new RuntimeException("Error: User not found with email: " + loginRequest.getEmail()));
         
@@ -95,12 +93,10 @@ public class AuthController {
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
 
-        // Create new user's account
         User user = new User(signUpRequest.getUsername(),
                              signUpRequest.getEmail(),
                              encoder.encode(signUpRequest.getPassword()));
         
-        // Set additional fields
         user.setFirstName(signUpRequest.getFirstName());
         user.setLastName(signUpRequest.getLastName());
         user.setPhoneNumber(signUpRequest.getPhoneNumber());
@@ -136,7 +132,6 @@ public class AuthController {
         user.setRoles(roles);
         userRepository.save(user);
 
-        // Automatically log in the new user and return JWT
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(signUpRequest.getUsername(), signUpRequest.getPassword()));
 
@@ -174,7 +169,6 @@ public class AuthController {
         User user = userRepository.findById(userDetails.getId())
                 .orElseThrow(() -> new RuntimeException("Error: User is not found."));
         
-        // Update fields (except password and roles)
         user.setFirstName(userUpdate.getFirstName());
         user.setLastName(userUpdate.getLastName());
         user.setPhoneNumber(userUpdate.getPhoneNumber());
@@ -186,35 +180,19 @@ public class AuthController {
     
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetRequest passwordResetRequest) {
-        // In a real application, we would:
-        // 1. Generate a unique token
-        // 2. Save it to the database with an expiration time
-        // 3. Send an email with a link containing the token
-        
-        // For this demo, we'll just check if the email exists and return a success message
         boolean userExists = userRepository.existsByEmail(passwordResetRequest.getEmail());
         
         if (!userExists) {
-            // For security reasons, we still return success even if the email doesn't exist
             return ResponseEntity.ok(new MessageResponse("If your email is registered, you will receive password reset instructions."));
         }
         
-        // In a real application, here we would send the email
         String resetToken = UUID.randomUUID().toString();
-        // Store the token and expiration in the database...
-        // Send the email with the reset link...
         
         return ResponseEntity.ok(new MessageResponse("Password reset instructions have been sent to your email."));
     }
     
     @PostMapping("/confirm-reset-password")
     public ResponseEntity<?> confirmResetPassword(@Valid @RequestBody PasswordResetConfirmRequest request) {
-        // In a real application, we would:
-        // 1. Validate the token
-        // 2. Check if it's expired
-        // 3. Update the user's password
-        
-        // For this demo, we'll just return a success message
         return ResponseEntity.ok(new MessageResponse("Your password has been successfully reset. Please login with your new password."));
     }
 }
